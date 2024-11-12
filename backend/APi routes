@@ -1,0 +1,30 @@
+GET /sets: Get all flashcard sets.
+POST /sets: Create a new flashcard set
+GET /sets/:id: "Get a flashcard set by ID"
+PUT /sets/:id: "Update a flashcard set by ID"
+DELETE /sets/:id: "Delete a flashcard set by ID"
+POST/set/:id/comment : "Comment on a flashcard set, by the current user"
+
+
+GET /flashcards: "Get all flashcards in a set"
+POST /flashcards: Creates a new flashcard.
+
+
+GET /users: "Get all users"
+POST /users: Creates a new user.
+GET /users/:id: The ID of the user"
+PUT /users/:id: "Update a user by ID"
+DELETE /users/:id: "Delete a user by ID"
+GET /users/{userID}/sets : "Get all flashcard sets created by a user"
+GET /users/{userID}/collections: "Get all flashcard set collections created by a user"
+GET  /users/{userID}/collections/{collectionID}:"Get a flashcard set collection by ID"
+PUT /users/{userID}/collections/{collectionID}: "Update a flashcard set collection by ID"
+DELETE /users/{userID}/collections/{collectionID}:
+"Delete a flashcard set collection by ID"
+
+GET /collections: "Get all flashcard set collections"
+POST /collections: "Create a new flashcard set collection"
+GET  /collections/random:"Redirect to a random flashcard set collection"
+
+
+POST /telemetry: Creates a new telemetry entry.
