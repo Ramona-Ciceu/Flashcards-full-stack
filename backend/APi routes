@@ -1,13 +1,13 @@
-GET /sets: Get all flashcard sets.
-POST /sets: Create a new flashcard set
-GET /sets/:id: "Get a flashcard set by ID"
-PUT /sets/:id: "Update a flashcard set by ID"
-DELETE /sets/:id: "Delete a flashcard set by ID"
-POST/set/:id/comment : "Comment on a flashcard set, by the current user"
+///GET /sets: Get all flashcard sets.
+///POST /sets: Create a new flashcard set
+///GET /sets/:id: "Get a flashcard set by ID"
+///PUT /sets/:id: "Update a flashcard set by ID"
+///DELETE /sets/:id: "Delete a flashcard set by ID"
+//POST/set/:id/comment : "Comment on a flashcard set, by the current user"
 
 
-GET /flashcards: "Get all flashcards in a set"
-POST /flashcards: Creates a new flashcard.
+GET /flashcard: "Get all flashcards in a set"
+POST /flashcard: Creates a new flashcard.
 
 
 GET /users: "Get all users"
