@@ -6,16 +6,16 @@
 //POST/set/:id/comment : "Comment on a flashcard set, by the current user"
 
 
-GET /flashcard: "Get all flashcards in a set"
-POST /flashcard: Creates a new flashcard.
+//GET /flashcard: "Get all flashcards in a set"
+//POST /flashcard: Creates a new flashcard.
 
 
-GET /users: "Get all users"
-POST /users: Creates a new user.
-GET /users/:id: The ID of the user"
-PUT /users/:id: "Update a user by ID"
-DELETE /users/:id: "Delete a user by ID"
-GET /users/{userID}/sets : "Get all flashcard sets created by a user"
+//GET /users: "Get all users"
+////POST /users: Creates a new user.
+///GET /users/:id: The ID of the user"
+//PUT /users/:id: "Update a user by ID"
+//DELETE /users/:id: "Delete a user by ID"
+//GET /users/{userID}/sets : "Get all flashcard sets created //by a user"
 GET /users/{userID}/collections: "Get all flashcard set collections created by a user"
 GET  /users/{userID}/collections/{collectionID}:"Get a flashcard set collection by ID"
 PUT /users/{userID}/collections/{collectionID}: "Update a flashcard set collection by ID"

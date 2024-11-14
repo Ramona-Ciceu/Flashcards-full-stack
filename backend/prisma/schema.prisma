@@ -13,11 +13,13 @@ model Set {
   id          Int        @id @default(autoincrement())
   name        String
   description String?
+  userId      Int
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   flashcards  Flashcard[]
   collections Collection[]
-  reviews     Review[]
+  comments     Comment[]
+  user        User       @relation(fields: [userId], references: [id])
 }
 
 model Flashcard {
@@ -30,12 +32,16 @@ model Flashcard {
 
 model User {
   id        Int         @id @default(autoincrement())
+  firstName String
+  lastName String
   username  String
   password  String
-  email     String
+  email     String 
+  role      String
+  sets      Set[]
   collections Collection[]
   telemetry   Telemetry[]
-  reviews     Review[]
+  comments     Comment[]
 }
 
 model Collection {
@@ -56,12 +62,12 @@ model Telemetry {
   user          User      @relation(fields: [userId], references: [id])
 }
 
-model Review {
+model Comment {
   id        Int      @id @default(autoincrement())
   userId   Int
   setId    Int
   rating    Int      
-  comment   String?
+  comments   String?
   createdAt DateTime @default(now())
   user     User     @relation(fields: [userId], references: [id])
   set      Set      @relation(fields: [setId], references: [id])
