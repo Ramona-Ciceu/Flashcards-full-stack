@@ -16,7 +16,7 @@
 //PUT /users/:id: "Update a user by ID"
 //DELETE /users/:id: "Delete a user by ID"
 //GET /users/{userID}/sets : "Get all flashcard sets created //by a user"
-GET /users/{userID}/collections: "Get all flashcard set collections created by a user"
+//GET /users/{userID}/collections: "Get all flashcard set collections created by a user"
 GET  /users/{userID}/collections/{collectionID}:"Get a flashcard set collection by ID"
 PUT /users/{userID}/collections/{collectionID}: "Update a flashcard set collection by ID"
 DELETE /users/{userID}/collections/{collectionID}:

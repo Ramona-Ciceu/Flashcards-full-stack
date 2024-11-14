@@ -25,9 +25,11 @@ model Set {
 model Flashcard {
   id         Int      @id @default(autoincrement())
   setId      Int
+  userId     Int
   question   String
   solution   String
   set        Set      @relation(fields: [setId], references: [id])
+  user       User     @relation(fields:  [userId], references: [id])
 }
 
 model User {
@@ -38,7 +40,8 @@ model User {
   password  String
   email     String 
   role      String
-  sets      Set[]
+  sets     Set[]
+  flashcards Flashcard[]
   collections Collection[]
   telemetry   Telemetry[]
   comments     Comment[]

@@ -356,14 +356,14 @@ app.delete('/user/:id', async (req: Request, res: Response) => {
   });
 
 // Get all flashcard sets created by a user
-app.get('/users/:userID/sets', async (req: Request, res: Response) => {
-    const { userID } = req.params;
+app.get('/user/:userID/set', async (req: Request, res: Response) => {
+    const { userId } = req.params;
   
     try {
       // Find the user by ID
       const user = await prisma.user.findUnique({
         where: {
-          id: Number(userID), // Ensure userID is a number
+          id: Number(userId), // Ensure userID is a number
         },
       });
   
@@ -376,7 +376,7 @@ app.get('/users/:userID/sets', async (req: Request, res: Response) => {
       const flashcardSets = await prisma.set.findMany({
         where: {
             // 'userId' is a foreign key in the flashcard set model
-          userId: user?.id, 
+          id: Number(userId) , 
         },
       });
   
@@ -391,17 +391,18 @@ app.get('/users/:userID/sets', async (req: Request, res: Response) => {
 //Get all flashcards set collections created by a user
      //?When getting the collection will we need to get the setId alongside userId???
 
-app.get('/users/:userID/collections', async (req: Request, res: Response) => {
-    const { userID } = req.params;
-    const { setId } = req.params;
+app.get('/users/:userId/collection', async (req: Request, res: Response) => {
+    const { userId,setId } = req.params;
+  
   
     try {
       // Find the user by ID
       const user = await prisma.user.findUnique({
         where: {
-          id: Number(userID),
+          id: Number(userId),
         },
       })
+      //Find the set by id
         const set =  await prisma.set.findUnique({
             where:{
                 id: Number(setId)
@@ -409,17 +410,18 @@ app.get('/users/:userID/collections', async (req: Request, res: Response) => {
       })
      
   
-      // If user is not found, return a 404 error
-      if (!user && set) {
+      // If user or set is not found, return a 404 error
+      if (!user && !set) {
          res.status(404).json({ error: 'User or set not found' });
       }
+      
   
       // Retrieve all flashcard collection created by this user
       const flashcardCollection = await prisma.collection.findMany({
         where: {
-            // 'userId' is a foreign key in the flashcard set model
-          userId: user?.id, 
-          setId: set?.id,
+            // 'userId' is a foreign key in the collection model
+           id: Number(userId) , 
+           // setId: set.id ,
         },
       });
   
@@ -427,11 +429,41 @@ app.get('/users/:userID/collections', async (req: Request, res: Response) => {
       res.status(200).json(flashcardCollection);
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'An error occurred while fetching the flashcard collection.' });
+      res.status(500).json({ error: 'An error occurred while fetching the flashcard collection.' })
     }
   });
 
 ///Get a flachcard set collection by ID
+app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Response) => {
+    const { userId, collectionId } = req.params;
+   
+  
+    try {
+      // Find the collection by ID and user Id
+      const collection = await prisma.collection.findFirst({
+        where: {
+          id: Number(collectionId),
+          userId: Number(userId),
+        },
+      })
+       include: {
+        set: true;
+        user: true;
+       }
+    
+     
+      // If user is not found, return a 404 error
+      if (!collection) {
+         res.status(404).json({ error: 'Collection not found' });
+      }
+  
+      // Return the list of flashcard colleciton
+      res.status(200).json(collection);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'An error occurred while fetching the flashcard collection.' });
+    }
+  });
 
 
 
