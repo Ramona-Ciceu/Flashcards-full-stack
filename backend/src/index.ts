@@ -2,14 +2,11 @@
 
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express'
-
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import { request } from 'http';
 import { PrismaClient } from  '@prisma/client';
-//Importing bcryptjs for password hashing and security.
 import bcrypt from 'bcryptjs';
-
 import { error } from 'console';
 //Configures the environment variables.
 dotenv.config();
