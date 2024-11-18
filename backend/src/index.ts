@@ -1,33 +1,63 @@
+//Importing the necessary libraries and modules
+
 import express from 'express';
-import type { Request, Response } from 'express'
+import type { Request, Response, NextFunction } from 'express'
+
 import dotenv from 'dotenv';
+import bodyParser from 'body-parser';
 import { request } from 'http';
 import { PrismaClient } from  '@prisma/client';
+//Importing bcryptjs for password hashing and security.
 import bcrypt from 'bcryptjs';
-import { error } from 'console';
 
+import { error } from 'console';
+//Configures the environment variables.
 dotenv.config();
 
-
-
+//Initialising the Express application.
 const app = express();
+//Defining the listening Port.
 const PORT = 3000;
-//Middleware to parse Json
+//Middleware to parse Json§
 app.use(express.json());
-
-
-
+// Creating an instance of PrismaClient to interact with the database.
 const prisma = new PrismaClient();
 
-// Health check route
-//app.get('/', (req: Request, res: Response) => {
-    //res.send('Hello, World!');
-  //});
 
 
-// Get all sets
+app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log('Middleware executed');
+    next(); // Pass control to the next middleware
+});
+
+//Custom middleware for validating request bodies
+const middleware = (req: Request, res: Response, next: NextFunction): void => {
+    try {
+        // If the required field `exampleField` is missing, return a 400 error.
+        if (!req.body.exampleField) {
+            res.status(400).json({ error: 'exampleField is required' });
+            return; // End the response cycle
+        }
+
+        //If validation passes, proceed to the next middleware
+        next();
+    } catch (error) {
+        console.error('Middleware error:', error);
+        res.status(500).json({ error: 'An internal server error occurred' });
+    }
+};
+
+//Checking health enpoints
+app.get('/', (req: Request, res: Response) => {
+    res.send('The active API version');
+  });
+
+
+  
+// Get all flashcard sets
 app.get('/set', async (req: Request, res: Response) => {
     try {
+      //Fetches all the sets from the database with specific fields.
         const sets = await prisma.set.findMany({
           //  where: { private: false },
             select: {
@@ -45,16 +75,18 @@ app.get('/set', async (req: Request, res: Response) => {
     }
 });
 
-// CREATE a set
+// CREATE a new set
 app.post('/set', async (req: Request, res: Response) => {
     const { name, description , userId} = req.body;
   
     try {
-        //Check how many sets have been created today
+      //Define the start and end of the current day
+        
         const today =  new Date();
         const startOfDay = new Date(today.setHours(0, 0, 0, 0)); 
     const endOfDay = new Date(today.setHours(23, 59, 59, 999)); 
 
+    //Check how many sets have been created today
         const setsCreatedToday = await prisma.set.count({
             where: {
               createdAt: {
@@ -65,11 +97,12 @@ app.post('/set', async (req: Request, res: Response) => {
               },
             },
           });
+          //Enforeces a limit of 20 sets per day.
            // If more than 20 sets have been created today, return a 429 status
     if (setsCreatedToday >= 20) {
         res.status(429).json({ error: 'You have reached the maximum number of flashcard sets allowed today' });
       }
-      // Create the new set
+      // Create the new set in the database
       const set = await prisma.set.create({
         data: {
           name,
@@ -88,17 +121,15 @@ app.post('/set', async (req: Request, res: Response) => {
 
 // GET a specific set by ID
   app.get('/set/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { id } = req.params; 
     try {
+      //Retrive the set with the specified ID
         const sets = await prisma.set.findUnique({
          
-            where: {
-                id: Number(id),
-                },
-      
-        });
-        res.status(200).json(sets);
-        
+            where: { id: Number(id), },
+     });
+     //Response with the set if found
+        res.status(200).json(sets); 
     } catch (error) {
        res.status(404).json({ error: 'Error fetching sets. ' });
 
@@ -108,9 +139,11 @@ app.post('/set', async (req: Request, res: Response) => {
 // UPDATE a set by ID
 app.put('/set/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
+    //Extract fields to update
     const { name, description } = req.body;
   
     try {
+      //Update the ste in the database
       const set = await prisma.set.update({
         where: {
           id: Number(id),
@@ -137,6 +170,7 @@ app.delete('/set/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
+    //Delete the set from the database
     await prisma.set.delete({
       where: {
         id: parseInt(id),
@@ -149,26 +183,28 @@ app.delete('/set/:id', async (req: Request, res: Response) => {
 });
 
 //POST: Comment on a flashcard set, by the current user
-app.post('/set/:id/comment', async (req: Request, res: Response) => {
-    const { id } = req.params; // ID of the flashcard set
-    const { userId, rating, comment } = req.body; // Assumes userId, rating, and optional comment are in the body
+app.post('/set/:id/comments', async (req: Request, res: Response) => {
+    const { id } = req.params; 
+    //Extract comment details
+    const { userId, rating, comments } = req.body; 
   
     try {
       // Validate that rating is between 1 and 5
       if (!rating || rating < 1 || rating > 5) {
          res.status(400).json({ error: 'Rating must be between 1 and 5' });
       }
+      //Create a comment in the database
       const comm = await prisma.comment.create({
         data: {
           setId: Number(id),
           userId,
           rating,
-          //comment
+          comments
         
         },
       });
   
-      res.status(201).json(comment);
+      res.status(201).json(comm);
       console.log('Comment created');
     } catch (error) {
       console.error(error);
@@ -176,19 +212,25 @@ app.post('/set/:id/comment', async (req: Request, res: Response) => {
       res.status(404).json({ error: 'The flashcard set was not found' });
     }
   });
-  
+ 
   
 // GET all flashcards in a specific set, with an optional shuffle
 app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
     const { id } = req.params; // ID of the flashcard set
-    const { shuffle } = req.query; // Whether to shuffle the flashcards (optional)
-  
+    // Whether to shuffle the flashcards 
+    const { shuffle } = req.query; 
     try {
       // Retrieve flashcards for the given set ID
       let flashcards = await prisma.flashcard.findMany({
         where: {
           setId: Number(id),
         },
+        select:{
+          id: true,
+          question: true,
+          solution: true,
+          difficulty: true,
+        }
       });
   
       // If shuffle is true, randomize the order of flashcards
@@ -207,6 +249,8 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
       res.status(500).json({ error: 'Error retrieving flashcards' });
     }
   });
+
+
 
 //Get all users
 app.get('/user', async (req: Request, res: Response) => {
@@ -228,34 +272,51 @@ app.get('/user', async (req: Request, res: Response) => {
     }
 });
 
-// POST: Create a new user
-app.post('/user', async (req: Request, res: Response) => {
-    const { username, password, email, role, firstName, lastName} = req.body;
+// Middleware for validating user input
+const validateUserInput = (req: Request, res: Response, next: NextFunction): void => {
+    const { username, password, email, role, firstName, lastName } = req.body;
 
-    // Validate required fields
+    //Check for missing fields
     if (!username || !password || !email || !role || !firstName || !lastName) {
-         res.status(400).json({ error: 'Username, password, email, and role are required.' });
+         res.status(400).json({ error: 'All fields are required: username, password, email, role, firstName, lastName.' });
+         return;
     }
 
-    // Check for valid roles (you can customize this list as needed)
+    // Check for valid roles
     if (role !== 'admin' && role !== 'user') {
-         res.status(400).json({ error: 'Role must be either "admin" or "user".' });
+        res.status(400).json({ error: 'Role must be either "admin" or "user".' });
+        return;
     }
+//This moves to the next middleware/handler if validation passes
+    next(); 
+};
+// Middleware for hashing passwords
+const hashPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { password } = req.body;
+        //Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+    // Replace plaintext password with hashed password
+        req.body.password = hashedPassword; 
+        next();
+    } catch (error) {
+        console.error('Error hashing password:', error);
+        res.status(500).json({ error: 'An error occurred while processing the password.' });
+    }
+};
+
+// Route to create a new user
+app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Response) => {
+    const { username, password, email, role, firstName, lastName } = req.body;
 
     try {
-        // Log the password to check for undefined values
-        console.log("Password received:", password);
-        
-        // Hash the password before saving it
-        const hashedPassword = await bcrypt.hash(password, 10);
-
         // Create the new user
         const user = await prisma.user.create({
             data: {
                 username,
-                password: hashedPassword,
+                password, 
                 email,
-                role, 
+                role,
                 firstName,
                 lastName,
             },
@@ -263,11 +324,11 @@ app.post('/user', async (req: Request, res: Response) => {
 
         res.status(201).json(user);
     } catch (error) {
-        console.error(error);
-        res.status(400).json({ error: 'The user could not be created' });
+        console.error('Error creating user:', error);
+        res.status(400).json({ error: 'The user could not be created.' });
+        return;
     }
 });
-
 
 //Get a user by ID
 app.get('/user/:id', async (req: Request, res: Response) => {
@@ -389,29 +450,26 @@ app.get('/user/:userID/set', async (req: Request, res: Response) => {
   });
 
 //Get all flashcards set collections created by a user
-     //?When getting the collection will we need to get the setId alongside userId???
 
 app.get('/users/:userId/collection', async (req: Request, res: Response) => {
-    const { userId,setId } = req.params;
+    const { userId } = req.params;
+    const { setId} = req.query;
+
   
   
     try {
-      // Find the user by ID
+      // check if user exists
       const user = await prisma.user.findUnique({
         where: {
           id: Number(userId),
+        
         },
       })
-      //Find the set by id
-        const set =  await prisma.set.findUnique({
-            where:{
-                id: Number(setId)
-            },
-      })
+   
      
   
       // If user or set is not found, return a 404 error
-      if (!user && !set) {
+      if (!user ) {
          res.status(404).json({ error: 'User or set not found' });
       }
       
@@ -420,9 +478,12 @@ app.get('/users/:userId/collection', async (req: Request, res: Response) => {
       const flashcardCollection = await prisma.collection.findMany({
         where: {
             // 'userId' is a foreign key in the collection model
-           id: Number(userId) , 
-           // setId: set.id ,
+           userId: Number(userId) , 
+            //setId: Number (setId)
         },
+        include:{
+            set: true,
+        }
       });
   
       // Return the list of flashcard colleciton
@@ -430,45 +491,229 @@ app.get('/users/:userId/collection', async (req: Request, res: Response) => {
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'An error occurred while fetching the flashcard collection.' })
+      
     }
   });
 
 ///Get a flachcard set collection by ID
 app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Response) => {
     const { userId, collectionId } = req.params;
+
+    try {
+        // Convert userId and collectionId to numbers, handle NaN cases
+        const parsedUserId = parseInt(userId, 10);
+        const parsedCollectionId = parseInt(collectionId, 10);
+
+        if (isNaN(parsedUserId) || isNaN(parsedCollectionId)) {
+             res.status(400).json({ error: 'Invalid userId or collectionId. They must be numbers.' });
+             console.log(error);
+        }
+
+        // Find the collection by ID and user ID
+        const collection = await prisma.collection.findFirst({
+            where: {
+                id: parsedCollectionId,
+                userId: parsedUserId,
+            },
+            include: {
+                set: true,
+                user: true,
+            },
+        });
+
+        // If collection is not found, return a 404 error
+        if (!collection) {
+             res.status(404).json({ error: 'Collection not found' });
+        }
+
+        // Return the collection data
+        res.status(200).json(collection);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while fetching the flashcard collection.' });
+        console.log(error);
+    }
+});
+
+// UPDATE a flashcard set collection by id
+app.put('/collection/:id', async (req: Request, res: Response) => {
+    const collectionId = parseInt(req.params.id, 10);
+  const { comments, setId } = req.body;
+  
+  try {
+    // Check if the collection exists
+    const collection = await prisma.collection.findUnique({
+      where: { id: collectionId },
+    });
+
+    if (!collection) {
+       res.status(404).json({ message: 'Collection not found' });
+    }
+
+    // Update the collection with the new comment and setId
+    const updatedCollection = await prisma.collection.update({
+        where: { id: collectionId },
+        data: {
+          commentId: comments ? Number(comments) : undefined, 
+          setId: setId ? Number(setId) : undefined,
+        },
+        include: {
+          set: true,
+          user: true,
+        comments: true,
+        },
+      });
+ // Respond with the updated collection details
+  res.status(200).json(updatedCollection);
+
+} catch (error) {
+  console.error(error);
+   res.status(500).json({ message: 'Internal Server Error' });
+   console.log(error);
+}
+});
    
+// DELETE endpoint to delete a flashcard set collection by ID
+app.delete('/collection/:id', async (req: Request, res: Response) => {
+    const collectionId = parseInt(req.params.id, 10);
   
     try {
-      // Find the collection by ID and user Id
-      const collection = await prisma.collection.findFirst({
-        where: {
-          id: Number(collectionId),
-          userId: Number(userId),
-        },
-      })
-       include: {
-        set: true;
-        user: true;
-       }
-    
-     
-      // If user is not found, return a 404 error
+      // Check if the collection exists
+      const collection = await prisma.collection.findUnique({
+        where: { id: collectionId },
+      });
+  
       if (!collection) {
-         res.status(404).json({ error: 'Collection not found' });
+         res.status(404).json({ message: 'Collection not found' });
+         return;
       }
   
-      // Return the list of flashcard colleciton
-      res.status(200).json(collection);
+      // Delete the collection
+      await prisma.collection.delete({
+        where: { id: collectionId },
+      });
+  
+      // Respond with 204 No Content (successfully deleted)
+       res.status(204).send();
+       return;
+  
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'An error occurred while fetching the flashcard collection.' });
+       res.status(500).json({ message: 'Internal Server Error' });
+       console.log(error);
     }
   });
 
+  // GET endpoint to retrieve all flashcard set collections
+app.get('/collections', async (req: Request, res: Response) => {
+    try {
+      // Retrieve all collections with associated set, user, and comment
+      const collections = await prisma.collection.findMany({
+        include: {
+          set: true,     
+          user: true,    
+          comments: true, 
+        },
+      });
+  
+      // Respond with the list of collections
+       res.status(200).json(collections);
+       return;
+  
+    } catch (error) {
+      console.error(error);
+       res.status(500).json({ message: 'Internal Server Error' });
+       return;
+    }
+  });
 
+// POST endpoint to create a new flashcard set collection
+app.post('/collections', middleware, async (req: Request, res: Response) => {
+    const { comment, setID } = req.body;
+  
+    // Ensure the necessary fields are provided
+    if (!comment || !setID) {
+       res.status(400).json({ message: 'Comment and setID are required' });
+       return;
+    }
+  
+    try {
+      // Check if the set exists
+      const flashcardSet = await prisma.set.findUnique({
+        where: { id: setID },
+      });
+  
+      if (!flashcardSet) {
+         res.status(404).json({ message: 'The flashcard set was not found' });
+         console.log(error);
+      }
+
+      let name :string | undefined = req.body?.name;
+      if(typeof name !== "string" || name.trim() === "")
+{
+    name = "";
+}  
+      // Create the new collection
+      const newCollection = await prisma.collection.create({
+        data: {
+          commentId: comment ,
+           name: name,
+            setId: setID,
+            userId: 1, 
+        },
+        include: {
+          set: true,  
+          user: true, 
+        },
+      });
+  
+      // Return the created collection
+       res.status(201).json(newCollection);
+       return;
+  
+    } catch (error) {
+      console.error(error);
+       res.status(500).json({ message: 'Internal Server Error' });
+       console.log(error);
+    }
+  });  
+
+ // GET /collections/random: Redirect to a random flashcard set collection.
+app.get('/collections/random', async (req: Request, res: Response) => {
+  try {
+    const collections = await prisma.collection.findMany();
+    const randomCollection = collections[Math.floor(Math.random() * collections.length)];
+    res.redirect(`/collections/${randomCollection.id}`);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching random collection' });
+  }
+});
+
+// POST /telemetry: Creates a new telemetry entry.
+app.post('/telemetry', async (req: Request, res: Response) => {
+  const { eventType, userId, additionalInfo } = req.body;
+
+  // Validate required fields
+  if (!eventType || !userId) {
+     res.status(400).json({ error: 'eventType and userId are required' });
+  }
+
+  try {
+    const telemetry = await prisma.telemetry.create({
+      data: {
+        eventType,
+        userId: Number(userId),
+        additionalInfo: additionalInfo || null, 
+      },
+    });
+    res.status(201).json(telemetry);
+  } catch (error) {
+    res.status(500).json({ error: 'Error creating telemetry entry' });
+  }
+});
 
 
   app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`); 
 
  });

@@ -14,6 +14,7 @@ model Set {
   name        String
   description String?
   userId      Int
+  dailySetLimit Int  @default(20)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   flashcards  Flashcard[]
@@ -28,8 +29,10 @@ model Flashcard {
   userId     Int
   question   String
   solution   String
+  difficulty String 
   set        Set      @relation(fields: [setId], references: [id])
   user       User     @relation(fields:  [userId], references: [id])
+  
 }
 
 model User {
@@ -52,9 +55,12 @@ model Collection {
   name    String
   userId  Int
   setId   Int
+  commentId Int
   user    User  @relation(fields: [userId], references: [id])
   set     Set   @relation(fields: [setId], references: [id])
+  comments Comment @relation(fields: [commentId], references: [id])
 }
+
 
 model Telemetry {
   id            Int       @id @default(autoincrement())
@@ -67,11 +73,13 @@ model Telemetry {
 
 model Comment {
   id        Int      @id @default(autoincrement())
-  userId   Int
-  setId    Int
   rating    Int      
   comments   String?
   createdAt DateTime @default(now())
+  userId   Int
+  setId    Int
   user     User     @relation(fields: [userId], references: [id])
   set      Set      @relation(fields: [setId], references: [id])
+  collection Collection[]
 }
+

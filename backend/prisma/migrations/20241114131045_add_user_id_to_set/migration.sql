@@ -22,5 +22,3 @@ DROP TABLE "Set";
 ALTER TABLE "new_Set" RENAME TO "Set";
 PRAGMA foreign_keys=ON;
 PRAGMA defer_foreign_keys=OFF;
-
-ALTER TABLE new_Set RENAME TO Set;
