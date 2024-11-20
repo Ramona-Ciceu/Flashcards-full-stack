@@ -8,6 +8,7 @@ interface flashcard {
   id: number;
   question: string;
   solution: string;
+  difficulty: string; 
 }
 
 
@@ -39,6 +40,7 @@ const FlashcardPage = () => {
           <li key={flashcard.id}>
             <h3>{flashcard.question}</h3>
             <p>{flashcard.solution}</p>
+            <p>Difficulty: {flashcard.difficulty}</p>
           </li>
         ))}
       </ul>
