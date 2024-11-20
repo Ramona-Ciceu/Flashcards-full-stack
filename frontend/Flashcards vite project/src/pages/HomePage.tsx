@@ -1,8 +1,13 @@
 // frontend/src/pages/HomePage.tsx
 
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+
+interface Set {
+  id: Number;
+  name: string;
+}
 
 const HomePage = () => {
   const [sets, setSets] = useState<any[]>([]);
@@ -10,8 +15,8 @@ const HomePage = () => {
   useEffect(() => {
     const fetchSets = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/sets');
-        setSets(response.data);
+        const response = await axios.get('http://localhost:3000/set');
+        setSets(response.data as Set[]);
       } catch (error) {
         console.error('Error fetching sets:', error);
       }
@@ -25,7 +30,7 @@ const HomePage = () => {
       <ul>
         {sets.map((set) => (
           <li key={set.id}>
-            <Link to={`/sets/${set.id}`}>{set.name}</Link>
+            <Link to={`/set/${set.id}`}>{set.name}</Link>
           </li>
         ))}
       </ul>

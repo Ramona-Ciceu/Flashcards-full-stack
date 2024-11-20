@@ -1,18 +1,27 @@
 // frontend/src/pages/FlashcardPage.tsx
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
+interface flashcard {
+  id: number;
+  question: string;
+  solution: string;
+}
+
+
 const FlashcardPage = () => {
-  const { setId } = useParams();
+  const { setId } = useParams() as { setId: string };
   const [flashcards, setFlashcards] = useState<any[]>([]);
+
 
   useEffect(() => {
     const fetchFlashcards = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/sets/${setId}/flashcards`);
-        setFlashcards(response.data);
+        const response = await axios.get(`http://localhost:3000/set/${setId}/flashcard`);
+        setFlashcards(response.data as flashcard[]);
+        
       } catch (error) {
         console.error('Error fetching flashcards:', error);
       }
@@ -29,7 +38,7 @@ const FlashcardPage = () => {
         {flashcards.map((flashcard) => (
           <li key={flashcard.id}>
             <h3>{flashcard.question}</h3>
-            <p>{flashcard.answer}</p>
+            <p>{flashcard.solution}</p>
           </li>
         ))}
       </ul>

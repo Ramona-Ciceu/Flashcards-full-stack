@@ -138,6 +138,12 @@ app.put('/set/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     //Extract fields to update
     const { name, description } = req.body;
+
+    if (!id || isNaN(Number(id))) { 
+       res.status(400).json({ error: 'Invalid id parameter' }); return; } 
+       if (!name && !description) { 
+         res.status(400).json({ error: 'No fields to update' }); 
+         return; }
   
     try {
       //Update the ste in the database
@@ -185,11 +191,12 @@ app.post('/set/:id/comments', async (req: Request, res: Response) => {
     //Extract comment details
     const { userId, rating, comments } = req.body; 
   
+    // Validate that rating is between 1 and 5
+     if (rating === undefined || rating < 1 || rating > 5) {
+        res.status(400).json({ error: 'Rating must be between 1 and 5' });
+      return; }
     try {
-      // Validate that rating is between 1 and 5
-      if (!rating || rating < 1 || rating > 5) {
-         res.status(400).json({ error: 'Rating must be between 1 and 5' });
-      }
+    
       //Create a comment in the database
       const comm = await prisma.comment.create({
         data: {
@@ -205,22 +212,34 @@ app.post('/set/:id/comments', async (req: Request, res: Response) => {
       console.log('Comment created');
     } catch (error) {
       console.error(error);
-      
-      res.status(404).json({ error: 'The flashcard set was not found' });
+      if(error instanceof Error && error.message.includes('P2025')){ res.status(404).json({ error: 'The flashcard set was not found' });
     }
+    res.status(500).json({error: 'Internal server error'});
+    return;
+  }
   });
  
   
 // GET all flashcards in a specific set, with an optional shuffle
 app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
-    const { id } = req.params; // ID of the flashcard set
+    const { id } = req.params ; // ID of the flashcard set
+    const numericId = Number(id);
+
+  if (isNaN(numericId)){
+    res.status(400).json({
+      error: 'Invalid set ID'
+    });
+  } else {
+
+  
     // Whether to shuffle the flashcards 
     const { shuffle } = req.query; 
+    
     try {
       // Retrieve flashcards for the given set ID
       let flashcards = await prisma.flashcard.findMany({
         where: {
-          setId: Number(id),
+          setId: numericId,
         },
         select:{
           id: true,
@@ -238,13 +257,16 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
       // If no flashcards are found, return a 404 error
       if (flashcards.length === 0) {
         res.status(404).json({ error: 'Flashcard set not found' });
+        return;
       }
   
       res.status(200).json(flashcards);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Error retrieving flashcards' });
+      return;
     }
+  }
   });
 
 
@@ -360,10 +382,15 @@ app.put('/user/:id', async (req: Request, res: Response) => {
     if (role !== undefined && !isAdmin) {
          res.status(403).json({
             error: 'Not authorized to change user role.',
-        });
+        }); return;
     }
 
     try {
+      const numericId = Number(id);
+      if(isNaN(numericId)){
+        res.status(400).json({error : 'Invalid user ID'});
+        return;
+      }
         // Find user by ID
         const user = await prisma.user.findUnique({
             where: { id: Number(id) },
@@ -378,7 +405,7 @@ app.put('/user/:id', async (req: Request, res: Response) => {
 
         // Update user with the provided data
         const updatedUser = await prisma.user.update({
-            where: { id: Number(id) },
+            where: { id: numericId },
             data: {
                 username: username || user?.username, // Keep existing username if not provided
                 firstName: firstName || user?.firstName, // Keep existing firstName if not provided
@@ -418,10 +445,15 @@ app.get('/user/:userID/set', async (req: Request, res: Response) => {
     const { userId } = req.params;
   
     try {
+      const numericUserId = Number(userId);
+      if(isNaN(numericUserId)){
+        res.status(400).json({error: 'Invalid user ID'});
+        return;
+      }
       // Find the user by ID
       const user = await prisma.user.findUnique({
         where: {
-          id: Number(userId), // Ensure userID is a number
+          id: numericUserId, // Ensure userID is a number
         },
       });
   
@@ -434,7 +466,7 @@ app.get('/user/:userID/set', async (req: Request, res: Response) => {
       const flashcardSets = await prisma.set.findMany({
         where: {
             // 'userId' is a foreign key in the flashcard set model
-          id: Number(userId) , 
+          userId: numericUserId , 
         },
       });
   
@@ -451,14 +483,17 @@ app.get('/user/:userID/set', async (req: Request, res: Response) => {
 app.get('/users/:userId/collection', async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { setId} = req.query;
-
-  
   
     try {
+      const numericUserId = Number(userId);
+       if (isNaN(numericUserId)){
+        res.status(400).json({error: 'Invalid user ID'});
+        return;
+       }
       // check if user exists
       const user = await prisma.user.findUnique({
         where: {
-          id: Number(userId),
+          id: numericUserId,
         
         },
       })
@@ -475,8 +510,8 @@ app.get('/users/:userId/collection', async (req: Request, res: Response) => {
       const flashcardCollection = await prisma.collection.findMany({
         where: {
             // 'userId' is a foreign key in the collection model
-           userId: Number(userId) , 
-            //setId: Number (setId)
+            userId: numericUserId,
+            setId: Number (setId)
         },
         include:{
             set: true,
@@ -488,7 +523,7 @@ app.get('/users/:userId/collection', async (req: Request, res: Response) => {
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'An error occurred while fetching the flashcard collection.' })
-      
+      return;
     }
   });
 
@@ -503,7 +538,7 @@ app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Resp
 
         if (isNaN(parsedUserId) || isNaN(parsedCollectionId)) {
              res.status(400).json({ error: 'Invalid userId or collectionId. They must be numbers.' });
-             console.log(error);
+             return;
         }
 
         // Find the collection by ID and user ID
@@ -521,6 +556,7 @@ app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Resp
         // If collection is not found, return a 404 error
         if (!collection) {
              res.status(404).json({ error: 'Collection not found' });
+             return;
         }
 
         // Return the collection data
@@ -528,7 +564,7 @@ app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Resp
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while fetching the flashcard collection.' });
-        console.log(error);
+       return;
     }
 });
 
@@ -538,6 +574,9 @@ app.put('/collection/:id', async (req: Request, res: Response) => {
   const { comments, setId } = req.body;
   
   try {
+    // Ensure collectionId is a valid number 
+    if (isNaN(collectionId)) { 
+       res.status(400).json({ message: 'Invalid collection ID' }); return; }
     // Check if the collection exists
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId },
@@ -566,7 +605,7 @@ app.put('/collection/:id', async (req: Request, res: Response) => {
 } catch (error) {
   console.error(error);
    res.status(500).json({ message: 'Internal Server Error' });
-   console.log(error);
+   return;
 }
 });
    
@@ -575,6 +614,10 @@ app.delete('/collection/:id', async (req: Request, res: Response) => {
     const collectionId = parseInt(req.params.id, 10);
   
     try {
+      // Ensure collectionId is a valid number
+       if (isNaN(collectionId)) { 
+         res.status(400).json({ message: 'Invalid collection ID' }); 
+         return; }
       // Check if the collection exists
       const collection = await prisma.collection.findUnique({
         where: { id: collectionId },
@@ -671,7 +714,7 @@ app.post('/collections', middleware, async (req: Request, res: Response) => {
     } catch (error) {
       console.error(error);
        res.status(500).json({ message: 'Internal Server Error' });
-       console.log(error);
+       return;
     }
   });  
 
@@ -683,6 +726,7 @@ app.get('/collections/random', async (req: Request, res: Response) => {
     res.redirect(`/collections/${randomCollection.id}`);
   } catch (error) {
     res.status(500).json({ error: 'Error fetching random collection' });
+    return;
   }
 });
 
@@ -693,6 +737,7 @@ app.post('/telemetry', async (req: Request, res: Response) => {
   // Validate required fields
   if (!eventType || !userId) {
      res.status(400).json({ error: 'eventType and userId are required' });
+     return;
   }
 
   try {
@@ -706,6 +751,7 @@ app.post('/telemetry', async (req: Request, res: Response) => {
     res.status(201).json(telemetry);
   } catch (error) {
     res.status(500).json({ error: 'Error creating telemetry entry' });
+    return;
   }
 });
 
