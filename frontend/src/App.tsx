@@ -1,9 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import FlashcardPage from './pages/FlashcardPage';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import FlashcardPage from './pages/flashcardPage';
 import HomePage from './pages/HomePage';
 import UserProfilePage from './pages/UserProfilePage';
-import UserSetsPage from './pages/UserSetsPage';
+import UserSetsPage from './pages/userSetsPage';
 import CreateFlashcardSetPage from './pages/CreateFlashcardSetPage';
 import Header from './components/Header';
 
@@ -11,13 +11,13 @@ const App: React.FC = () => {
   return (
     <Router>
       <Header />
-      <Switch>
-        <Route path="/" exact component={HomePage} />
-        <Route path="/set/:setId/flashcards" component={FlashcardPage} />
-        <Route path="/user/:userId" component={UserProfilePage} />
-        <Route path="/user/:userId/sets" component={UserSetsPage} />
-        <Route path="/create-flashcard-set" component={CreateFlashcardSetPage} />
-      </Switch>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/set/:setId/flashcards" element={<FlashcardPage />} />
+        <Route path="/user/:userId" element={<UserProfilePage />} />
+        <Route path="/user/:userId/sets" element={<UserSetsPage />} />
+        <Route path="/create-flashcard-set" element={<CreateFlashcardSetPage />} />
+      </Routes>
     </Router>
   );
 };
