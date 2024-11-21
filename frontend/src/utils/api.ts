@@ -4,7 +4,7 @@ const api = axios.create({
   baseURL: 'http://localhost:3000', // Backend URL
 });
 
-export const fetchSet = async () => {
+export const fetchSets = async () => {
   const response = await api.get('/set');
   return response.data;
 };
