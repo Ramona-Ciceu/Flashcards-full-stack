@@ -1,6 +1,5 @@
 // frontend/src/pages/NotFoundPage.tsx
 
-import React from 'react';
 
 const NotFoundPage = () => {
   return (
