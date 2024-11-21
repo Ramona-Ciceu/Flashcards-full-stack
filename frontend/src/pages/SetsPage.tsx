@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Flashcard from '../components/flashcard';
+import Flashcard from '../components/flashcardList';
 
 
-interface FlashcardData {
+interface Flashcard {
   question: string;
   answer: string;
   difficulty: 'Easy' | 'Medium' | 'Hard'; // Add difficulty here
@@ -20,7 +20,7 @@ interface Set {
   name: string;
   description: string;
   user: User;
-  flashcards: FlashcardData[]; 
+  flashcards: Flashcard[]; 
   comments: Comment[];
 }
 interface User {
@@ -62,13 +62,13 @@ const SetPage: React.FC = () => {
     if (!newComment.trim()) return;
 
     try {
-      await axios.post(`/api/sets/${setId}/comments`, {
+      await axios.post(`/api/set/${setId}/comments`, {
         text: newComment,
         userId: user?.id, // Ensure user is logged in
       });
 
       // Refresh the comments for the set
-      const response = await axios.get(`/api/sets/${setId}/comments`);
+      const response = await axios.get(`/api/set/${setId}/comments`);
       const updatedSets = sets.map((set) => {
         if (set.id === setId) {
           return { ...set, comments: response.data };
@@ -109,6 +109,7 @@ const SetPage: React.FC = () => {
             {user && user.role === 'admin' && (
               <button onClick={() => handleDelete(set.id)}>Delete</button>
             )}
+            {user && set && ( <button onClick={() => handleAddComment(set.id)}>Add Comment</button>)}
           </li>
         ))}
       </ul>

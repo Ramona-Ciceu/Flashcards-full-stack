@@ -5,9 +5,10 @@
 import React, { useState } from 'react';
 
 interface FlashcardProps {
+  id: number;
   question: string;
   answer: string;
-   // Difficulty level
+
   difficulty: 'Easy' | 'Medium' | 'Hard';
 }
 

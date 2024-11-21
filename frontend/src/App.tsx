@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
 import Home from './pages/HomePage';
 import Sets from './pages/SetsPage';
-import CreateSet from './pages/createSetPage';
+import CreateSet from './pages/user';
 import CollectionPage from './pages/collectionPage';
 
 const App = () => (
