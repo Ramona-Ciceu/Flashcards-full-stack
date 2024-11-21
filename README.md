@@ -9,12 +9,13 @@ npm install --save-dev @types/bcryptjs
 
 Frontnend packages installed :
 npm create vite@latest frontend -- --template react-ts
-npm install react react-dom react-router-dom
 npm install -D tailwindcss postcss autoprefixer
-npm install -D typescript @types/react @types/react-dom @types/react-router-dom
+npx tailwindcss init -p
+npm install react-router-dom
+
 npm install axios
-npm install -D @types/axios
-npx tailwindcss init
+
+
 
 
 
