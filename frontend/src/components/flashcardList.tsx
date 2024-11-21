@@ -1,42 +1,31 @@
-//Flashcard component allows to display flashcards in react frontend
-//The code will render a flashcard with question and solution
-//The user clicks on "Show answer" to reveal the solution.
+import React from 'react';
+import FlashcardItem from './flashcard';
 
-import React, { useState } from 'react';
-
-interface FlashcardProps {
+interface Flashcard {
   id: number;
   question: string;
-  answer: string;
-
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  solution: string;
+  difficulty: string;
 }
 
-const Flashcard: React.FC<FlashcardProps> = ({ question, answer, difficulty }) => {
-  const [showAnswer, setShowAnswer] = useState<boolean>(false);
+interface FlashcardListProps {
+  flashcards: Flashcard[];
+}
 
-  const handleToggleAnswer = () => {
-    // Toggle answer visibility
-    setShowAnswer((prev) => !prev); 
-  };
-
+const FlashcardList: React.FC<FlashcardListProps> = ({ flashcards }) => {
   return (
-    <div className="flashcard">
-      <div className="flashcard-header">
-        <h3>{question}</h3>
-        <span className="difficulty">{difficulty}</span> {/* Show difficulty */}
-      </div>
-      {showAnswer && (
-        <div className="answer">
-          <p>{answer}</p>
-        </div>
-      )}
-      <button onClick={handleToggleAnswer}>
-        {showAnswer ? 'Hide Answer' : 'Show Answer'}
-      </button>
-    </div>
+    <ul>
+      {flashcards.map(flashcard => (
+        <FlashcardItem
+          key={flashcard.id}
+          id={flashcard.id}
+          question={flashcard.question}
+          solution={flashcard.solution}
+          difficulty={flashcard.difficulty}
+        />
+      ))}
+    </ul>
   );
 };
 
-export default Flashcard;
-
+export default FlashcardList;
