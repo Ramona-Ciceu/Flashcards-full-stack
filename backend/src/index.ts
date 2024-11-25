@@ -269,6 +269,39 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
   }
   });
 
+// Add a flashcard to a set
+app.post('/flashcards', async (req: Request, res: Response) => {
+  const { setId } = req.params;
+  const { question, answer, hint } = req.body;
+
+  try {
+    // Check if the set exists
+    const set = await prisma.set.findUnique({
+      where: { id: parseInt(setId) },
+    });
+
+    if (!set) {
+      return res.status(404).json({ error: 'Set not found' });
+    }
+
+    // Create the flashcard and associate it with the set
+    const flashcard = await prisma.flashcard.create({
+      data: {
+        question,
+        answer,
+        hint,
+        set: {
+          connect: { id: parseInt(setId) },
+        },
+      },
+    });
+
+    res.status(201).json(flashcard);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while adding the flashcard' });
+  }
+});
 
 
 //Get all users
