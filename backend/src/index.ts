@@ -269,10 +269,10 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
   }
   });
 
-// Add a flashcard to a set
+// Add a flashcard 
 app.post('/flashcards', async (req: Request, res: Response) => {
   const { setId } = req.params;
-  const { question, answer, hint } = req.body;
+  const { question, solution } = req.body;
 
   try {
     // Check if the set exists
@@ -288,8 +288,7 @@ app.post('/flashcards', async (req: Request, res: Response) => {
     const flashcard = await prisma.flashcard.create({
       data: {
         question,
-        answer,
-        hint,
+        solution,
         set: {
           connect: { id: parseInt(setId) },
         },
