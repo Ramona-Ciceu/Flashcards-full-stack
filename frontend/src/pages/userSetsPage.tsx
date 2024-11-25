@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import FlashcardSetList from '../components/SetList';
+import React from 'react';
 
 interface FlashcardSet {
   id: number;
@@ -16,7 +17,7 @@ const UserSetsPage: React.FC = () => {
   useEffect(() => {
     const fetchSets = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/users/${userId}/sets`);
+        const response = await axios.get(`http://localhost:3000/backend/users/${userId}/sets`);
         setSets(response.data);
       } catch (error) {
         console.error('Error fetching user sets:', error);

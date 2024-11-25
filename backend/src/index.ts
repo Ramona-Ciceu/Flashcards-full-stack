@@ -27,6 +27,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next(); // Pass control to the next middleware
 });
 
+// ===========================
+// Middleware
+// ===========================
 //Custom middleware for validating request bodies
 const middleware = (req: Request, res: Response, next: NextFunction): void => {
     try {
@@ -44,12 +47,18 @@ const middleware = (req: Request, res: Response, next: NextFunction): void => {
     }
 };
 
+// ===========================
+// ROUTES
+// ===========================
+
 //Checking health enpoints
 app.get('/', (req: Request, res: Response) => {
     res.send('The active API version');
   });
 
-
+// ===========================
+// Flashcard Set Routes
+// ===========================
   
 // Get all flashcard sets
 app.get('/set', async (req: Request, res: Response) => {
@@ -185,6 +194,9 @@ app.delete('/set/:id', async (req: Request, res: Response) => {
   }
 });
 
+// ===========================
+// Comment Routes (on Sets)
+// ===========================
 //POST: Comment on a flashcard set, by the current user
 app.post('/set/:id/comments', async (req: Request, res: Response) => {
     const { id } = req.params; 
@@ -270,7 +282,9 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
   });
 
 
-
+// ===========================
+// User Routes
+// ===========================
 //Get all users
 app.get('/user', async (req: Request, res: Response) => {
     try {
@@ -479,7 +493,6 @@ app.get('/user/:userID/set', async (req: Request, res: Response) => {
   });
 
 //Get all flashcards set collections created by a user
-
 app.get('/users/:userId/collection', async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { setId} = req.query;
@@ -755,7 +768,20 @@ app.post('/telemetry', async (req: Request, res: Response) => {
   }
 });
 
+// ===========================
+// Helper Functions
+// ===========================
 
+// Centralized Error Handler
+function handleError(res: Response, error: any, message: string) {
+  console.error(message, error);
+  res.status(500).json({ error: message });
+}
+
+
+// ===========================
+// Start the Server
+// ===========================
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`); 
 

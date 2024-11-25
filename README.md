@@ -18,9 +18,6 @@ npm install axios
 
 
 
-
-
-
 To run the app,always use: npm run start:dev
 
 To generate database will ne to run : npx prisma generate.

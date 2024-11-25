@@ -1,5 +1,5 @@
 import React from 'react';
-import FlashcardItem from './flashcard';
+import FlashcardItem from './flashcardItem';
 
 interface Flashcard {
   id: number;
@@ -9,13 +9,13 @@ interface Flashcard {
 }
 
 interface FlashcardListProps {
-  flashcards: Flashcard[];
+  flashcards: Flashcard[];  
 }
 
 const FlashcardList: React.FC<FlashcardListProps> = ({ flashcards }) => {
   return (
     <ul>
-      {flashcards.map(flashcard => (
+      {flashcards.map((flashcard) => (
         <FlashcardItem
           key={flashcard.id}
           id={flashcard.id}

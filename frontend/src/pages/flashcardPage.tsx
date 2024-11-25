@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import { fetchFlashcardSet, fetchSetById } from '../utils/api';  // Import from api.ts
 import FlashcardList from '../components/flashcardList';
 import CommentForm from '../components/CommentForm';
 import CommentList from '../components/CommentList';
@@ -20,15 +20,15 @@ interface Comment {
 }
 
 const FlashcardPage: React.FC = () => {
-  const { setId } = useParams<{ setId: string }>();
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const { setId } = useParams<{ setId: string }>();  // Getting the `setId` from URL params
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);  // State to store flashcards
+  const [comments, setComments] = useState<Comment[]>([]);  // State to store comments
 
   useEffect(() => {
     const fetchFlashcards = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/sets/${setId}/cards`);
-        setFlashcards(response.data);
+        const response = await fetchFlashcardSet(Number(setId));  // Fetch flashcards based on `setId`
+        setFlashcards(response);  // Set the fetched flashcards
       } catch (error) {
         console.error('Error fetching flashcards:', error);
       }
@@ -36,8 +36,8 @@ const FlashcardPage: React.FC = () => {
 
     const fetchComments = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/sets/${setId}`);
-        setComments(response.data.comments);
+        const response = await fetchSetById(Number(setId));  // Fetch comments for the set
+        setComments(response.comments);
       } catch (error) {
         console.error('Error fetching comments:', error);
       }
@@ -47,15 +47,18 @@ const FlashcardPage: React.FC = () => {
       fetchFlashcards();
       fetchComments();
     }
-  }, [setId]);
+  }, [setId]);  // Re-run effect if `setId` changes
 
   return (
-    <div>
-      <h1>Flashcards</h1>
-      <FlashcardList flashcards={flashcards} />
-      <h2>Comments</h2>
-      <CommentList comments={comments} />
-      <CommentForm setId={Number(setId)} />
+    <div className="flex justify-center items-center h-screen">
+      <h1 className="text-4xl font-bold text-center">Flashcard Page</h1>
+      <div>
+        <h1>Flashcards</h1>
+        <FlashcardList flashcards={flashcards} />  {/* Passing flashcards as a prop */}
+        <h2>Comments</h2>
+        <CommentList comments={comments} />  {/* Passing comments as a prop */}
+        <CommentForm setId={Number(setId)} />  {/* Passing setId to CommentForm */}
+      </div>
     </div>
   );
 };

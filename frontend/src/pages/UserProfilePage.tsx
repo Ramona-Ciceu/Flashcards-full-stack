@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import UserItem from '../components/UserItem';
+import React from 'react';
 
 interface User {
   id: number;
@@ -9,6 +10,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  role: string;
 }
 
 const UserProfilePage: React.FC = () => {
@@ -40,6 +42,7 @@ const UserProfilePage: React.FC = () => {
           email={user.email}
           firstName={user.firstName}
           lastName={user.lastName}
+          role={user.role}
         />
       ) : (
         <p>Loading...</p>

@@ -9,10 +9,14 @@ interface Comment {
 }
 
 interface CommentListProps {
-  comments: Comment[];
+  comments: Comment[];  // Accept comments as a prop
 }
 
 const CommentList: React.FC<CommentListProps> = ({ comments }) => {
+  if (!comments.length) {
+    return <p>No comments yet.</p>;
+  }
+
   return (
     <ul>
       {comments.map((comment, index) => (
