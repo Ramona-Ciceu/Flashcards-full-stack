@@ -27,3 +27,21 @@ To run the app,always use: npm run start:dev
 To generate database will ne to run : npx prisma generate.
 
 Unable to use Difficulty enum : error: Error validating: You defined the enum `Difficulty`. The current connector does not support enums. Will use difficulty as a string attribute in flashcard table. 
+
+
+
+Try this as a feature:
+// Notification Model
+interface Notification {
+    userId: number;
+    message: string;
+    read: boolean;
+}
+
+const notifications: Notification[] = [];
+
+// Adding a notification
+const addNotification = (userId: number, message: string) => {
+    const notification: Notification = { userId, message, read: false };
+    notifications.push(notification);
+};
