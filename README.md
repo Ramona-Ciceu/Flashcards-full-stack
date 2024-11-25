@@ -25,4 +25,4 @@ To run the app,always use: npm run start:dev
 
 To generate database will ne to run : npx prisma generate.
 
-Unable to use Difficulty enum : error: Error validating: You defined the enum `Difficulty`. But the current connector does not support enums. Will use difficulty as a string attribute in flashcard table. 
+Unable to use Difficulty enum : error: Error validating: You defined the enum `Difficulty`. The current connector does not support enums. Will use difficulty as a string attribute in flashcard table. 
