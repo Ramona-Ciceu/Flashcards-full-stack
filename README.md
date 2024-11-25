@@ -8,7 +8,8 @@ npm install bcryptjs
 npm install --save-dev @types/bcryptjs
 
 Frontnend packages installed :
-npm create vite@latest frontend -- --template react-ts
+or vite, to set it up first time i ran "npm create vite@latest frontend -- --template react-ts"
+but after that i've only ran "npm install vite"
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
 npm install react-router-dom
