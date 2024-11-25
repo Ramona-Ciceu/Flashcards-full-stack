@@ -8,7 +8,8 @@ npm install bcryptjs
 npm install --save-dev @types/bcryptjs
 
 Frontnend packages installed :
-npm create vite@latest frontend -- --template react-ts
+or vite, to set it up first time i ran "npm create vite@latest frontend -- --template react-ts"
+but after that i've only ran "npm install vite"
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
 npm install react-router-dom
@@ -22,4 +23,22 @@ To run the app,always use: npm run start:dev
 
 To generate database will ne to run : npx prisma generate.
 
-Unable to use Difficulty enum : error: Error validating: You defined the enum `Difficulty`. But the current connector does not support enums. Will use difficulty as a string attribute in flashcard table. 
+Unable to use Difficulty enum : error: Error validating: You defined the enum `Difficulty`. The current connector does not support enums. Will use difficulty as a string attribute in flashcard table. 
+
+
+
+Try this as a feature:
+// Notification Model
+interface Notification {
+    userId: number;
+    message: string;
+    read: boolean;
+}
+
+const notifications: Notification[] = [];
+
+// Adding a notification
+const addNotification = (userId: number, message: string) => {
+    const notification: Notification = { userId, message, read: false };
+    notifications.push(notification);
+};
