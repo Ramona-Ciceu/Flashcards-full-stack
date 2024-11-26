@@ -8,7 +8,7 @@ const CreateFlashcardSetPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/api/sets', { name, description });
+      await axios.post('http://localhost:3000/api/set', { name, description });
       setName('');
       setDescription('');
     } catch (error) {

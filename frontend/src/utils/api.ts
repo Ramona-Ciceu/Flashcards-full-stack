@@ -43,6 +43,18 @@ export const fetchFlashcardSet = async(id: number)=>{
   const response = await api.get('/set/:id/flashcard');
   return response.data;
 }
+
+// Login user with email and password
+export const loginUser = async (email: string, password: string) => {
+  try {
+    const response = await api.post('/login', { email, password }); // Adjust endpoint as per your backend
+    return response.data; // Return the login response (e.g., token, user info)
+  } catch (error) {
+    console.error('Error logging in:', error);
+    throw error; // Propagate error for handling in the component
+  }
+};
+
 //Get user 
 export const fetchUser = async () => {
   const response = await api.get('/user');

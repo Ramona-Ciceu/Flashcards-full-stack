@@ -2,10 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'; // Import React Router components
 import HomePage from './pages/HomePage';
 import FlashcardPage from './pages/flashcardPage';
-import LoginPage from './pages/loginPage';
+import Login from './components/Login';
 
 const App: React.FC = () => {
   return (
+  
     <Router>
       {/* Navigation bar */}
       <nav className="bg-gray-800 p-4">
@@ -25,8 +26,8 @@ const App: React.FC = () => {
       {/* Routing for pages */}
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/flashcards" element={<FlashcardPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="./pages/flashcardPage" element={<FlashcardPage />} />
+        <Route path="./components/Login" element={<Login />} />
       </Routes>
     </Router>
   );

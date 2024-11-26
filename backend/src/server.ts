@@ -4,7 +4,7 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express'
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
-import { request } from 'http';
+//import { request } from 'http';
 import { PrismaClient } from  '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { error } from 'console';
@@ -234,85 +234,92 @@ app.post('/set/:id/comments', async (req: Request, res: Response) => {
   
 // GET all flashcards in a specific set, with an optional shuffle
 app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
-    const { id } = req.params ; // ID of the flashcard set
-    const numericId = Number(id);
+  const { id } = req.params;  // ID of the flashcard set
+  const numericId = Number(id);
 
-  if (isNaN(numericId)){
+  if (isNaN(numericId)) {
     res.status(400).json({
-      error: 'Invalid set ID'
+      error: 'Invalid set ID',
     });
-  } else {
-
-  
-    // Whether to shuffle the flashcards 
-    const { shuffle } = req.query; 
-    
-    try {
-      // Retrieve flashcards for the given set ID
-      let flashcards = await prisma.flashcard.findMany({
-        where: {
-          setId: numericId,
-        },
-        select:{
-          id: true,
-          question: true,
-          solution: true,
-          difficulty: true,
-        }
-      });
-  
-      // If shuffle is true, randomize the order of flashcards
-      if (shuffle === 'true') {
-        flashcards = flashcards.sort(() => Math.random() - 0.5);
-      }
-  
-      // If no flashcards are found, return a 404 error
-      if (flashcards.length === 0) {
-        res.status(404).json({ error: 'Flashcard set not found' });
-        return;
-      }
-  
-      res.status(200).json(flashcards);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Error retrieving flashcards' });
-      return;
-    }
+    return;  // Ensure the function exits if the ID is invalid
   }
-  });
 
-// Add a flashcard 
-app.post('/flashcards', async (req: Request, res: Response) => {
-  const { setId } = req.params;
-  const { question, solution } = req.body;
+  // Whether to shuffle the flashcards
+  const { shuffle } = req.query;
 
   try {
+    // Retrieve flashcards for the given set ID
+    let flashcards = await prisma.flashcard.findMany({
+      where: {
+        setId: numericId,
+      },
+      select: {
+        id: true,
+        question: true,
+        solution: true,
+        difficulty: true,
+      },
+    });
+
+    // If shuffle is true, randomize the order of flashcards
+    if (shuffle === 'true') {
+      flashcards = flashcards.sort(() => Math.random() - 0.5);
+    }
+
+    // If no flashcards are found, return a 404 error
+    if (flashcards.length === 0) {
+      res.status(404).json({ error: 'No flashcards found for the set' });
+      return;
+    }
+
+    res.status(200).json(flashcards);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error retrieving flashcards' });
+  }
+});
+
+
+app.post('/flashcards', async (req: Request, res: Response) => {
+  const { setId, question, solution, difficulty} = req.body;
+
+  try {
+    // Validate difficulty value
+    const validDifficulties = ["easy", "medium", "hard"];
+    if (!validDifficulties.includes(difficulty)) {
+       res.status(400).json({ error: 'Invalid difficulty. Valid values are "easy", "medium", "hard".' });
+    return;
+      }
+
     // Check if the set exists
     const set = await prisma.set.findUnique({
       where: { id: parseInt(setId) },
     });
 
     if (!set) {
-      return res.status(404).json({ error: 'Set not found' });
+      res.status(404).json({ error: 'Set not found' });
+      return;
     }
 
     // Create the flashcard and associate it with the set
-    const flashcard = await prisma.flashcard.create({
+    const newflashcard = await prisma.flashcard.create({
       data: {
         question,
         solution,
+        difficulty,  
         set: {
           connect: { id: parseInt(setId) },
         },
       },
     });
 
-    res.status(201).json(flashcard);
+    res.status(201).json(newflashcard);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'An error occurred while adding the flashcard' });
   }
 });
+
 
 // ===========================
 // User Routes

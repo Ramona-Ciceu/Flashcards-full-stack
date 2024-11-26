@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchSets } from '../utils/api';  // Import the fetchSets function from api.ts
-import './index.css';
+import '../index.css';
 
 const HomePage: React.FC = () => {
   const [flashcardSets, setFlashcardSets] = useState<any[]>([]);

@@ -1,13 +1,27 @@
 // src/pages/LoginPage.tsx
 import React, { useState } from 'react';
+import {useNavigate} from 'react-router-dom';
+import { loginUser} from '../utils/api';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    // Add your login logic here (e.g., API call to authenticate)
-    console.log('Logged in with', email, password);
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
+
+    try {
+      const data = await loginUser(email, password);
+      console.log('Login successful:', data);
+      // Handle login success (e.g., save token, redirect)
+    } catch (err) {
+      setError('Invalid email or password');
+      console.error('Login failed:', err);
+    }
   };
 
   return (
