@@ -15,7 +15,7 @@ function App() {
           element={
             <>
               {/* Navigation Bar specific to Flashcard Page */}
-              <nav className="bg-blue-500 p-2">
+              <nav className="bg-gray-500 p-2">
                 <ul className="flex space-x-4">
                   <li>
                     <Link to="/flashcards/view" className="text-white hover:text-gray-400">View Flashcards</Link>
