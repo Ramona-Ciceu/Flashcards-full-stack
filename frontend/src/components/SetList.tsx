@@ -1,6 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { fetchSets } from '../utils/api'; // Import the API function to fetch sets
-import FlashcardSetItem from './Set';
+import React from 'react';
 
 interface FlashcardSet {
   id: number;
@@ -8,37 +6,18 @@ interface FlashcardSet {
   description: string;
 }
 
-const FlashcardSetList: React.FC = () => {
-  const [sets, setSets] = useState<FlashcardSet[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+interface FlashcardSetListProps {
+  sets: FlashcardSet[];
+}
 
-  useEffect(() => {
-    const fetchFlashcardSets = async () => {
-      try {
-        const data = await fetchSets(); // Fetch all flashcard sets
-        setSets(data); // Assuming data is an array of sets
-      } catch (err) {
-        setError('Failed to fetch flashcard sets');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFlashcardSets();
-  }, []);
-
-  if (loading) return <p>Loading flashcard sets...</p>;
-  if (error) return <p>{error}</p>;
-
+const FlashcardSetList: React.FC<FlashcardSetListProps> = ({ sets }) => {
   return (
     <ul>
-      {sets.map((set) => (
-        <FlashcardSetItem
-          key={set.id}
-          id={set.id}
-          name={set.name}
-          description={set.description}
-        />
+      {sets.map(set => (
+        <li key={set.id}>
+          <h2>{set.name}</h2>
+          <p>{set.description}</p>
+        </li>
       ))}
     </ul>
   );

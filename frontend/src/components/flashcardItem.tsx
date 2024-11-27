@@ -12,7 +12,7 @@ const FlashcardItem: React.FC<FlashcardProps> = ({ id, question, solution, diffi
     <li key={id}>
       <h3>{question}</h3>
       <p>{solution}</p>
-      <p>Difficulty: {difficulty}</p>
+      <p>{difficulty}</p>
     </li>
   );
 };
