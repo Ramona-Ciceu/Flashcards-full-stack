@@ -4,8 +4,12 @@ Installed backend packages like:
 npm install express sqlite3 prisma cors
 npm install -D ts-node typescript nodemon @types/node @types/express @prisma/client
 
-npm install bcryptjs
+npm install bcryptjs 
+npm i --save-dev @types/jsonwebtoken
 npm install --save-dev @types/bcryptjs
+npm install express jsonwebtoken bcryptjs @types/express @types/jsonwebtoken @types/bcryptjs
+npm install cors
+npm i --save-dev @types/cors
 
 Frontnend packages installed :
 or vite, to set it up first time i ran "npm create vite@latest frontend -- --template react-ts"

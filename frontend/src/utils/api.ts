@@ -44,10 +44,23 @@ export const fetchFlashcardSet = async(id: number)=>{
   return response.data;
 }
 
-// Login user with email and password
-export const loginUser = async (email: string, password: string) => {
+// Sign-up user
+export const signupUser = async (data: { username: string; password: string; role: string }) => {
   try {
-    const response = await api.post('/login', { email, password }); // Adjust endpoint as per your backend
+    const response = await api.post('/api/auth/signup'); // Ensure the URL matches the backend route
+    return response.data; // Return the signup response (e.g., user info)
+  } catch (error) {
+    console.error('Error signing up:', error);
+    throw error; // Propagate the error for handling in the component
+  }
+};
+
+
+// Login user with username and password
+export const loginUser = async (username: string, password: string) => {
+  try {
+    const response = await api.post('http://localhost:3000/api/auth/login',
+       { username, password }); // Adjust endpoint as per your backend
     return response.data; // Return the login response (e.g., token, user info)
   } catch (error) {
     console.error('Error logging in:', error);
@@ -80,10 +93,8 @@ export const fetchUsers = async () => {
 export const createUser = async (data: {
   username: string;
   password: string;
-  email: string;
   role: string;
-  firstName: string;
-  lastName: string;
+  
 }) => {
   const response = await api.post('/user', data);
   return response.data;
@@ -95,9 +106,6 @@ export const createUser = async (data: {
 export const updateUser = async (id: number, data: {
   username?: string;
   password?: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
   role?: string;
 }) => {
   const response = await api.put(`/user/${id}`, data);

@@ -5,11 +5,14 @@ import type { Request, Response, NextFunction } from 'express'
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 //import { request } from 'http';
-import { PrismaClient } from  '@prisma/client';
+import { PrismaClient, User } from  '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { error } from 'console';
 //Configures the environment variables.
 dotenv.config();
+import jwt from 'jsonwebtoken';
+import cors from 'cors'; 
+
 
 //Initialising the Express application.
 const app = express();
@@ -21,6 +24,9 @@ app.use(express.json());
 const prisma = new PrismaClient();
 
 
+const SECRET_KEY = 'your_secret_key';
+app.use(cors()); 
+
 
 app.use((req: Request, res: Response, next: NextFunction) => {
     console.log('Middleware executed');
@@ -31,6 +37,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Middleware
 // ===========================
 //Custom middleware for validating request bodies
+
 const middleware = (req: Request, res: Response, next: NextFunction): void => {
     try {
         // If the required field `exampleField` is missing, return a 400 error.
@@ -47,6 +54,28 @@ const middleware = (req: Request, res: Response, next: NextFunction): void => {
     }
 };
 
+ const generateToken = (user: { 
+  id: number; username: string }): string => { 
+    return jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' }); }; 
+    
+    interface AuthenticatedRequest extends Request {
+       user?: { id: number; username: string; }; }
+       
+  const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => { 
+  const token = req.headers.authorization?.split(' ')[1];
+ if (!token) { 
+   res.status(401).json({ error: 'Access denied, token missing!' }); 
+   return;
+  } 
+  try { 
+  const decoded = jwt.verify(token, SECRET_KEY) as { 
+    id: number; username: string }; req.user = decoded; 
+    next(); } 
+  catch (error) { 
+   res.status(401).json({ error: 'Invalid token' }); 
+  return;
+  } };
+ 
 // ===========================
 // ROUTES
 // ===========================
@@ -55,6 +84,54 @@ const middleware = (req: Request, res: Response, next: NextFunction): void => {
 app.get('/', (req: Request, res: Response) => {
     res.send('The active API version');
   });
+
+// Define the protected route with authMiddleware
+app.get('/api/protected', authMiddleware, async (req: Request & { user?: any }, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    res.status(200).json({ message: 'Access granted', user: req.user });
+  } catch (err) {
+    next(err);  // Pass any errors to the next error handler
+  }
+});
+
+app.post('/api/auth/signup', async (req: Request, res: Response): Promise<void> => { 
+  const { username, password, role } = req.body; 
+  try { 
+    const hashedPassword = await bcrypt.hash(password, 10); const user = await prisma.user.create({ 
+      data: { username,  password: hashedPassword, role }, }); 
+      
+      const token = generateToken({
+         id: user.id, username: user.username }); res.status(201).json({ user, token }); } 
+      
+         catch (error) { res.status(500).json({ error: 'User could not be created' }); } });
+
+ app.post('/api/auth/login', async (req: Request, res: Response): Promise<void> => { 
+const { username, password } = req.body; 
+
+ // For guest login, just authenticate with the hardcoded guest user credentials
+ if (username === 'guest' && password === 'guest') {
+  const token = generateToken(username); // Generate a token for guest login
+   res.json({ message: 'Login successful', token });
+   return;
+}
+
+try { 
+  const user = await prisma.user.findFirst(
+    { 
+    where: { username }, }); 
+    
+    if (user && await bcrypt.compare(password, user.password)) { 
+      const token = generateToken({ 
+        id: user.id, username: user.username }); res.status(200).json({ user, token }); 
+      } else { res.status(401).json({ 
+        error: 'Invalid credentials' }); } }
+         catch (error) { res.status(500).json({ 
+          error: 'An error occurred while logging in' 
+        }); 
+      } 
+    });
+
+   
 
 // ===========================
 // Flashcard Set Routes
@@ -83,46 +160,60 @@ app.get('/set', async (req: Request, res: Response) => {
 
 // CREATE a new set
 app.post('/set', async (req: Request, res: Response) => {
-    const { name, description , userId} = req.body;
-  
-    try {
-      //Define the start and end of the current day
-        
-        const today =  new Date();
-        const startOfDay = new Date(today.setHours(0, 0, 0, 0)); 
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999)); 
+  const { name, description, userId } = req.body;
 
-    //Check how many sets have been created today
-        const setsCreatedToday = await prisma.set.count({
-            where: {
-              createdAt: {
-                // Start of the day
-                gte: startOfDay ,
-                // end of the day
-                lt: endOfDay,  
-              },
-            },
-          });
-          //Enforeces a limit of 20 sets per day.
-           // If more than 20 sets have been created today, return a 429 status
-    if (setsCreatedToday >= 20) {
-        res.status(429).json({ error: 'You have reached the maximum number of flashcard sets allowed today' });
-      }
-      // Create the new set in the database
-      const set = await prisma.set.create({
-        data: {
-          name,
-          description,
-          userId
+  try {
+    // Retrieve the user by userId to check their role
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+       res.status(404).json({ error: 'User not found' });
+       return;
+    }
+
+    // If the user is not an admin, check the number of sets created today
+    if (user.role !== 'admin') {
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+      // Check how many sets have been created by the user today
+      const setsCreatedToday = await prisma.set.count({
+        where: {
+          userId: user.id,  // Check sets created by the user
+          createdAt: {
+            gte: startOfDay,
+            lt: endOfDay,
+          },
         },
       });
-       // Return the created set with a 201 status code
-      res.status(201).json(set);
-      
-    } catch (error) {
-      res.status(500).json({ error: 'Error creating set' });
+
+      // Enforce a limit of 20 sets per day for non-admin users
+      if (setsCreatedToday >= 20) {
+         res.status(429).json({ error: 'You have reached the maximum number of flashcard sets allowed today' });
+         return;
+      }
     }
+
+    // Create the new set in the database
+    const set = await prisma.set.create({
+      data: {
+        name,
+        description,
+        userId,
+      },
+    });
+
+    // Return the created set with a 201 status code
+    res.status(201).json(set);
+
+  } catch (error) {
+    res.status(500).json({ error: 'Error creating set' });
+  }
 });
+
 
 
 // GET a specific set by ID
@@ -276,6 +367,7 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error retrieving flashcards' });
+  return;
   }
 });
 
@@ -317,6 +409,7 @@ app.post('/flashcards', async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'An error occurred while adding the flashcard' });
+  return;
   }
 });
 
@@ -389,8 +482,7 @@ app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Resp
                 password, 
                 email,
                 role,
-                firstName,
-                lastName,
+               
             },
         });
 
@@ -461,8 +553,6 @@ app.put('/user/:id', async (req: Request, res: Response) => {
             where: { id: numericId },
             data: {
                 username: username || user?.username, // Keep existing username if not provided
-                firstName: firstName || user?.firstName, // Keep existing firstName if not provided
-                lastName: lastName || user?.lastName, // Keep existing lastName if not provided
                 email: email || user?.email, // Keep existing email if not provided
                 password: hashedPassword || user?.password, // Keep existing password if not provided
                 role: role || user?.role, // Keep existing role if not provided
@@ -818,6 +908,7 @@ function handleError(res: Response, error: any, message: string) {
 }
 
 
+
 // ===========================
 // Start the Server
 // ===========================
@@ -825,3 +916,4 @@ function handleError(res: Response, error: any, message: string) {
     console.log(`Server is running on http://localhost:${PORT}`); 
 
  });
+      
