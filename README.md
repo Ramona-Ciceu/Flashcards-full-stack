@@ -10,6 +10,8 @@ npm install --save-dev @types/bcryptjs
 npm install express jsonwebtoken bcryptjs @types/express @types/jsonwebtoken @types/bcryptjs
 npm install cors
 npm i --save-dev @types/cors
+npm i --save-dev @types/jest
+npm i --save-dev @types/mocha
 
 Frontnend packages installed :
 or vite, to set it up first time i ran "npm create vite@latest frontend -- --template react-ts"

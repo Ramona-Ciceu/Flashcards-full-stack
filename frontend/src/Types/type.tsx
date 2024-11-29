@@ -1,8 +1,14 @@
+//src/Types/type.tsx
+
 export interface Flashcard {
     question: string;
-    answer: string;
+    solution: string;
     difficulty?: string;
   }
+  export interface FlashcardSetPageProps {
+    setId: number; // Define the type for setId as number
+  }
+  
   
   export interface FlashcardSet {
     id: number;

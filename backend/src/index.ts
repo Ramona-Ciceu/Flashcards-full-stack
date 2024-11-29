@@ -1,3 +1,4 @@
+//backend/src/index/tsx
 //Importing the necessary libraries and modules
 
 import express from 'express';
@@ -16,6 +17,7 @@ import cors from 'cors';
 
 //Initialising the Express application.
 const app = express();
+
 //Defining the listening Port.
 const PORT = 3000;
 //Middleware to parse Json§
@@ -247,7 +249,7 @@ app.put('/set/:id', async (req: Request, res: Response) => {
   
     try {
       //Update the ste in the database
-      const set = await prisma.set.update({
+      const updatedSet = await prisma.set.update({
         where: {
           id: Number(id),
         },
@@ -257,7 +259,7 @@ app.put('/set/:id', async (req: Request, res: Response) => {
         },
       });
   
-      res.status(200).json(set);
+      res.status(200).json(updatedSet);
       console.log("The updated flashcard set");
     } catch (error) {
       console.error(error);
@@ -270,9 +272,13 @@ app.put('/set/:id', async (req: Request, res: Response) => {
 
 // DELETE a set by ID
 app.delete('/set/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
-
+ 
   try {
+    const { id } = req.params;
+// Optionally, delete all flashcards in the set first
+  await prisma.flashcard.deleteMany({
+    where: { setId: parseInt(id) },
+});
     //Delete the set from the database
     await prisma.set.delete({
       where: {
@@ -439,10 +445,10 @@ app.get('/user', async (req: Request, res: Response) => {
 
 // Middleware for validating user input
 const validateUserInput = (req: Request, res: Response, next: NextFunction): void => {
-    const { username, password, email, role, firstName, lastName } = req.body;
+    const { username, password, role } = req.body;
 
     //Check for missing fields
-    if (!username || !password || !email || !role || !firstName || !lastName) {
+    if (!username || !password ||  !role ) {
          res.status(400).json({ error: 'All fields are required: username, password, email, role, firstName, lastName.' });
          return;
     }
@@ -472,7 +478,7 @@ const hashPassword = async (req: Request, res: Response, next: NextFunction) => 
 
 // Route to create a new user
 app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Response) => {
-    const { username, password, email, role, firstName, lastName } = req.body;
+    const { username, password,  role, } = req.body;
 
     try {
         // Create the new user
@@ -480,7 +486,6 @@ app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Resp
             data: {
                 username,
                 password, 
-                email,
                 role,
                
             },
@@ -517,7 +522,7 @@ app.get('/user/:id', async (req: Request, res: Response) => {
 
 app.put('/user/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { username, password, firstName, lastName, email, role } = req.body;
+    const { username, password, role } = req.body;
 
     // Checking the admin status manually or via a header/authorization mechanism
     // Check for admin via headers
@@ -552,10 +557,12 @@ app.put('/user/:id', async (req: Request, res: Response) => {
         const updatedUser = await prisma.user.update({
             where: { id: numericId },
             data: {
-                username: username || user?.username, // Keep existing username if not provided
-                email: email || user?.email, // Keep existing email if not provided
-                password: hashedPassword || user?.password, // Keep existing password if not provided
-                role: role || user?.role, // Keep existing role if not provided
+              //Keep the existing user if exists
+                username: username || user?.username, 
+                // Keep the existing password if not provided
+                password: hashedPassword || user?.password, 
+                // Keep the existing role if not provided
+                role: role || user?.role, 
             },
         });
 
@@ -917,3 +924,4 @@ function handleError(res: Response, error: any, message: string) {
 
  });
       
+ export default app;

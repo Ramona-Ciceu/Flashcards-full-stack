@@ -1,3 +1,4 @@
+//frontend/src/utils/api.tsx
 import axios from 'axios';
 
 const api = axios.create({
@@ -6,60 +7,66 @@ const api = axios.create({
 
 //Fetch all the flashcards sets
 export const fetchSets = async () => {
-  const response = await api.get('/set');
+  const response = await api.get('${api}/set');
   return response.data;
 };
 //Create a new flashcard set
 export const createSet = async (data: { name: string; description: string; userId: number }) => {
-  const response = await api.post('/set', data);
+  const response = await api.post('${api}/set', data);
   return response.data;
 };
 
 //Fetch a specific set by ID
 export const fetchSetById = async (id: number) => {
-  const response = await api.get(`/set/${id}`);
+  const response = await api.get(`${api}/set/${id}`);
   return response.data;
 };
 
 // Update an existing flashcard set by ID
 export const updateSet = async (id: number, data: { name: string; description: string }) => {
-  const response = await api.put(`/set/${id}`, data);
+  const response = await api.put(`${api}/set/${id}`, data);
   return response.data;
 };
 
 // Delete a flashcard set by ID
 export const deleteSet = async (id: number) => {
-  const response = await api.delete(`/set/${id}`);
+  const response = await api.delete(`${api}/set/${id}`);
   return response.data;
 };
 
 // Example: Create comments for a specific set
 export const createCommentsBySetId = async (setId: number) => {
-  const response = await api.post(`/set/${setId}/comments`);
+  const response = await api.post(`${api}/set/${setId}/comments`);
   return response.data;
 };
 //Get flashcards by set ID
 export const fetchFlashcardSet = async(id: number)=>{
-  const response = await api.get('/set/:id/flashcard');
+  const response = await api.get('${api}/set/:id/flashcard');
   return response.data;
 }
 
 // Sign-up user
 export const signupUser = async (data: { username: string; password: string; role: string }) => {
   try {
-    const response = await api.post('/api/auth/signup'); // Ensure the URL matches the backend route
+    const response = await api.post('${api}/api/auth/signup'); // Ensure the URL matches the backend route
     return response.data; // Return the signup response (e.g., user info)
   } catch (error) {
     console.error('Error signing up:', error);
     throw error; // Propagate the error for handling in the component
   }
 };
+// Create a new flashcard
+export const createFlashcard = async (data: { setId: number; question: string; solution: string; difficulty: string; }) => {
+  const response = await api.post('${api}/flashcards', data);
+  return response.data;
+};
+
 
 
 // Login user with username and password
 export const loginUser = async (username: string, password: string) => {
   try {
-    const response = await api.post('http://localhost:3000/api/auth/login',
+    const response = await api.post('${api}/auth/login',
        { username, password }); // Adjust endpoint as per your backend
     return response.data; // Return the login response (e.g., token, user info)
   } catch (error) {
@@ -70,14 +77,14 @@ export const loginUser = async (username: string, password: string) => {
 
 //Get user 
 export const fetchUser = async () => {
-  const response = await api.get('/user');
+  const response = await api.get('${api}/user');
   return response.data;
 };
 
 
 // Example: Fetch user details by user ID
 export const fetchUserById = async (id: number) => {
-  const response = await api.get(`/user/${id}`);
+  const response = await api.get(`${api}/user/${id}`);
   return response.data;
 };
 
@@ -85,7 +92,7 @@ export const fetchUserById = async (id: number) => {
 
 // Fetch all users
 export const fetchUsers = async () => {
-  const response = await api.get('/user');
+  const response = await api.get('${api}/user');
   return response.data;
 };
 
@@ -96,7 +103,7 @@ export const createUser = async (data: {
   role: string;
   
 }) => {
-  const response = await api.post('/user', data);
+  const response = await api.post('${api}/user', data);
   return response.data;
 };
 
@@ -108,19 +115,19 @@ export const updateUser = async (id: number, data: {
   password?: string;
   role?: string;
 }) => {
-  const response = await api.put(`/user/${id}`, data);
+  const response = await api.put(`${api}/user/${id}`, data);
   return response.data;
 };
 
 // Delete a user by ID
 export const deleteUser = async (id: number) => {
-  const response = await api.delete(`/user/${id}`);
+  const response = await api.delete(`${api}/user/${id}`);
   return response.data;
 };
 
 // Get all flashcard sets by user ID
 export const fetchFlashcardsByUser = async (userId: number) => {
-  const response = await api.get(`/user/${userId}/set`);
+  const response = await api.get(`${api}/user/${userId}/set`);
   return response.data;
 };
 

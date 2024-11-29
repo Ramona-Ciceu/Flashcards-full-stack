@@ -1,26 +1,37 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { signupUser } from "../utils/api"; // Adjust the import as needed
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createUser } from '../utils/api'; // Import the createUser function
 
-const SignUpPage: React.FC = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user"); // Default to 'user', can be changed if needed
+const SignupPage: React.FC = () => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('user'); // Default to 'user'
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   const handleSignUp = async () => {
     try {
-      const response = await signupUser({ username, password, role: 'user' });
-      alert('Signup successful!');
+      const user = { username, password, role };
+      const response = await createUser(user); // Create user through API
+      
+      if (response.username) {
+        alert('Signup successful! You can now log in.');
+        navigate('/login'); // Navigate to login page
+      } else {
+        setErrorMessage('Failed to create user.');
+      }
     } catch (error) {
-      console.error('Sign-up error:', error);
-      alert('Sign-up failed. Please try again.');
+      setErrorMessage('An error occurred during registration. Please try again.');
     }
   };
 
   return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">Sign Up</h1>
+      <h1 className="text-3xl font-bold mb-6">Create a New Account</h1>
+      <p className="text-xl font-bold mb-6">Sign Up</p>
+
+      {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
+
       <input
         type="text"
         placeholder="Username"
@@ -35,25 +46,30 @@ const SignUpPage: React.FC = () => {
         onChange={(e) => setPassword(e.target.value)}
         className="p-2 border mb-4 w-64"
       />
-      <div className="mb-4">
-        <label className="mr-2">Role:</label>
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className="p-2 border"
-        >
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
+      <select
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        className="p-2 border mb-4 w-64"
+      >
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+
       <button
         onClick={handleSignUp}
-        className="p-2 bg-green-500 text-white rounded-lg w-64 hover:bg-green-600"
+        className="p-2 bg-blue-500 text-white rounded-lg mb-4 w-64 hover:bg-blue-600"
       >
         Sign Up
+      </button>
+
+      <button
+        onClick={() => navigate('/login')}
+        className="p-2 bg-gray-500 text-white rounded-lg w-64 hover:bg-gray-600"
+      >
+        Already have an account? Login
       </button>
     </div>
   );
 };
 
-export default SignUpPage;
+export default SignupPage;
