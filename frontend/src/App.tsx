@@ -2,7 +2,7 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage";
-import FlashcardSetPage from "./pages/FlashcardSetPage";
+import FlashcardSetPage from "./pages/createFlashcardPage";
 import CollectionPage from "./pages/collectionPage";
 
 const App: React.FC = () => {

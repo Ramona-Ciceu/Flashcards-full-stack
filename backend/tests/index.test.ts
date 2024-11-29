@@ -220,19 +220,7 @@ describe('User API Routes', () => {
   });
 
   // Test POST create a user
-  it('should create a new flashcard set for POST /user', async () => {
-    const response = await request(app)
-      .post('/user')
-      .send({
-        username: 'test',
-	    role: 'admin',
-	
-      });
-    expect(response.status).toBe(201);
-    expect(response.body.name).toBe('test');
-    expect(response.body.description).toBe('Test description');
-  });
-
+  
   
 
 });

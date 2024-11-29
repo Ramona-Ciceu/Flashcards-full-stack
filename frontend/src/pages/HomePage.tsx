@@ -20,14 +20,14 @@ const HomePage: React.FC = () => {
       
       <button
         onClick={goToFlashcardSetPage}
-        className="p-3 bg-blue-500 text-white rounded-lg mb-4 hover:bg-blue-600"
+        className="p-3 bg-blue-500 text-white rounded-lg mb-4 hover:bg-green-600"
       >
         Go to Flashcard Sets
       </button>
 
       <button
         onClick={goToCollectionPage}
-        className="p-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
+        className="p-3 bg-blue-500 text-white rounded-lg hover:bg-green-600"
       >
         Go to Collections
       </button>
