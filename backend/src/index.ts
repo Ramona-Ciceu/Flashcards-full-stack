@@ -1,4 +1,4 @@
-//backend/src/index/tsx
+//backend/src/index
 //Importing the necessary libraries and modules
 
 import express from 'express';
@@ -6,7 +6,7 @@ import type { Request, Response, NextFunction } from 'express'
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 //import { request } from 'http';
-import { PrismaClient, User } from  '@prisma/client';
+import { PrismaClient } from  '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { error } from 'console';
 //Configures the environment variables.
@@ -57,11 +57,11 @@ const middleware = (req: Request, res: Response, next: NextFunction): void => {
 };
 
  const generateToken = (user: { 
-  id: number; username: string }): string => { 
-    return jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' }); }; 
+   username: string,  role: string  }): string => { 
+    return jwt.sign({  username: user.username, role: user.role}, SECRET_KEY, { expiresIn: '1h' }); }; 
     
     interface AuthenticatedRequest extends Request {
-       user?: { id: number; username: string; }; }
+       user?: {  username: string; role: string }; }
        
   const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => { 
   const token = req.headers.authorization?.split(' ')[1];
@@ -71,7 +71,7 @@ const middleware = (req: Request, res: Response, next: NextFunction): void => {
   } 
   try { 
   const decoded = jwt.verify(token, SECRET_KEY) as { 
-    id: number; username: string }; req.user = decoded; 
+    username: string, role: string }; req.user = decoded; 
     next(); } 
   catch (error) { 
    res.status(401).json({ error: 'Invalid token' }); 
@@ -88,7 +88,7 @@ app.get('/', (req: Request, res: Response) => {
   });
 
 // Define the protected route with authMiddleware
-app.get('/api/protected', authMiddleware, async (req: Request & { user?: any }, res: Response, next: NextFunction): Promise<void> => {
+app.get('/protected', authMiddleware, async (req: Request & { user?: any }, res: Response, next: NextFunction): Promise<void> => {
   try {
     res.status(200).json({ message: 'Access granted', user: req.user });
   } catch (err) {
@@ -96,45 +96,48 @@ app.get('/api/protected', authMiddleware, async (req: Request & { user?: any }, 
   }
 });
 
-app.post('/api/auth/signup', async (req: Request, res: Response): Promise<void> => { 
-  const { username, password, role } = req.body; 
-  try { 
-    const hashedPassword = await bcrypt.hash(password, 10); const user = await prisma.user.create({ 
-      data: { username,  password: hashedPassword, role }, }); 
-      
-      const token = generateToken({
-         id: user.id, username: user.username }); res.status(201).json({ user, token }); } 
-      
-         catch (error) { res.status(500).json({ error: 'User could not be created' }); } });
-
- app.post('/api/auth/login', async (req: Request, res: Response): Promise<void> => { 
-const { username, password } = req.body; 
-
- // For guest login, just authenticate with the hardcoded guest user credentials
- if (username === 'guest' && password === 'guest') {
-  const token = generateToken(username); // Generate a token for guest login
-   res.json({ message: 'Login successful', token });
-   return;
-}
-
-try { 
-  const user = await prisma.user.findFirst(
-    { 
-    where: { username }, }); 
+//Route for signup
+app.post('/signup', async (req: Request, res: Response): Promise<void> => {
+  const { username, password, role } = req.body;
+  
+  try {
+    // Hash the user's password
+    const hashedPassword = await bcrypt.hash(password, 10);
     
-    if (user && await bcrypt.compare(password, user.password)) { 
-      const token = generateToken({ 
-        id: user.id, username: user.username }); res.status(200).json({ user, token }); 
-      } else { res.status(401).json({ 
-        error: 'Invalid credentials' }); } }
-         catch (error) { res.status(500).json({ 
-          error: 'An error occurred while logging in' 
-        }); 
-      } 
+    // Create the user in the database
+    const user = await prisma.user.create({
+      data: { username, password: hashedPassword, role },
     });
 
-   
+    // Return only the user object (no token)
+    res.status(201).json({ user });
+  } catch (error) {
+    res.status(500).json({ error: 'User could not be created' });
+  }
+});
 
+
+         //Routes for login
+ app.post('/login', async (req: Request, res: Response) => {
+   const { username, password } = req.body;
+        
+     try {
+            const user = await prisma.user.findFirst({
+              where: { username },
+            });
+        
+            if (user && user.password === password) {
+              // Create and send a token (e.g., JWT)
+              const token = 'some-generated-token';  // Use JWT or another method
+              res.status(200).json({ token });
+            } else {
+              res.status(401).json({ error: 'Invalid credentials' });
+            }
+          } catch (error) {
+            res.status(500).json({ error: 'Error logging in.' });
+          }
+        });
+        
 // ===========================
 // Flashcard Set Routes
 // ===========================
@@ -432,7 +435,7 @@ app.get('/user', async (req: Request, res: Response) => {
                 id: true,
                 username: true,
                 password: true,
-                email: true
+
             }
         });
         //Return the flashcard set

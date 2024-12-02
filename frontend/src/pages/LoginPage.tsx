@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser } from '../utils/api'; // Import the login function
+import axios from 'axios';
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -10,12 +10,15 @@ const LoginPage: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      // Call the login API function
-      const response = await loginUser(username, password);
-      
+      // Send login request directly from here
+      const response = await axios.post('http://localhost:3000/login', {
+        username,
+        password,
+      });
+
       // If the response contains a token, login is successful
-      if (response.token) {
-        localStorage.setItem('token', response.token); // Store the token
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token); // Store the token
         alert('Login successful!');
         navigate('/home'); // Navigate to the home page
       } else {
@@ -25,6 +28,7 @@ const LoginPage: React.FC = () => {
       setErrorMessage('An error occurred during login. Please try again.');
     }
   };
+  
 
   return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100">
@@ -50,14 +54,14 @@ const LoginPage: React.FC = () => {
 
       <button
         onClick={handleLogin}
-        className="p-2 bg-blue-500 text-white rounded-lg mb-4 w-64 hover:bg-blue-600"
+        className="p-2 bg-blue-500 text-white rounded-lg mb-4 w-64 hover:bg-green-600"
       >
         Login
       </button>
 
       <button
         onClick={() => navigate('/signup')}
-        className="p-2 bg-gray-500 text-white rounded-lg w-64 hover:bg-gray-600"
+        className="p-2 bg-gray-500 text-white rounded-lg w-64 hover:bg-green-600"
       >
         Sign Up
       </button>

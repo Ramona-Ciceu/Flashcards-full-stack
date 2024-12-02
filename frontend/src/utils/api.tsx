@@ -48,13 +48,18 @@ export const fetchFlashcardSet = async(id: number)=>{
 // Sign-up user
 export const signupUser = async (data: { username: string; password: string; role: string }) => {
   try {
-    const response = await api.post('${api}/api/auth/signup'); // Ensure the URL matches the backend route
+    const response = await api.post('${api}/signup'); // Ensure the URL matches the backend route
     return response.data; // Return the signup response (e.g., user info)
   } catch (error) {
     console.error('Error signing up:', error);
     throw error; // Propagate the error for handling in the component
   }
 };
+
+
+
+
+
 // Create a new flashcard
 export const createFlashcard = async (data: { setId: number; question: string; solution: string; difficulty: string; }) => {
   const response = await api.post('${api}/flashcards', data);
@@ -62,23 +67,8 @@ export const createFlashcard = async (data: { setId: number; question: string; s
 };
 
 
-
-
-// Login user with username and password
-export const loginUser = async (username: string, password: string) => {
-  try {
-    const response = await api.post('${api}/auth/login',
-       { username, password }); // Adjust endpoint as per your backend
-    return response.data; // Return the login response (e.g., token, user info)
-  } catch (error) {
-    console.error('Error logging in:', error);
-    throw error; // Propagate error for handling in the component
-  }
-};
-
-//Get user 
 export const fetchUser = async () => {
-  const response = await api.get('${api}/user');
+  const response = await api.get(`${api}/user`);  
   return response.data;
 };
 
@@ -89,13 +79,13 @@ export const fetchUserById = async (id: number) => {
   return response.data;
 };
 
-
+/*
 
 // Fetch all users
 export const fetchUsers = async () => {
   const response = await api.get('${api}/user');
   return response.data;
-};
+};*/
 
 // Create a new user
 export const createUser = async (data: {
