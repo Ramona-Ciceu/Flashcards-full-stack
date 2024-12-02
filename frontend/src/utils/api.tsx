@@ -7,18 +7,18 @@ const api = axios.create({
 
 //Fetch all the flashcards sets
 export const fetchSets = async () => {
-  const response = await api.get('${api}/set');
+  const response = await api.get(`/set`);
   return response.data;
 };
 //Create a new flashcard set
-export const createSet = async (data: { name: string; description: string; userId: number }) => {
-  const response = await api.post('${api}/set', data);
+export const createSet = async (data: { name: string; }) => {
+  const response = await api.post('/set', data);
   return response.data;
 };
 // /axiosobject/set/2
 //Fetch a specific set by ID
 export const fetchSetById = async (id: number) => {
-  const response = await api.get(`${api}/set/${id}`);
+  const response = await api.get(`/set/${id}`);
   return response.data;
 };
 
@@ -30,24 +30,35 @@ export const updateSet = async (id: number, data: { name: string; description: s
 
 // Delete a flashcard set by ID
 export const deleteSet = async (id: number) => {
-  const response = await api.delete(`${api}/set/${id}`);
+  const response = await api.delete(`/set/${id}`);
   return response.data;
 };
 
 // Example: Create comments for a specific set
 export const createCommentsBySetId = async (setId: number) => {
-  const response = await api.post(`${api}/set/${setId}/comments`);
+  const response = await api.post(`/set/${setId}/comments`);
   return response.data;
 };
 //Get flashcards by set ID
 export const fetchFlashcardSet = async(id: number)=>{
-  const response = await api.get('${api}/set/:id/flashcard');
+  const response = await api.get('/set/:id/flashcard');
   return response.data;
 }
 
 // Create a new flashcard
 export const createFlashcard = async (data: { setId: number; question: string; solution: string; difficulty: string; }) => {
-  const response = await api.post('${api}/flashcards', data);
+  const response = await api.post('set/:id/flashcard', data);
+  return response.data;
+};
+// Update flashcard set
+export const updateFlashcardSet = async (data: { setId: number; question: string; solution: string; difficulty: string; }) => {
+  const response = await api.put('/set/:setId/flashcard/:flashcardId', data);
+  return response.data;
+};
+
+// Delete flashcard set
+export const deleteFlashcardSet = async (id: number) => {
+  const response = await api.delete(`/set/:setId/flashcard/:flashcardId`);
   return response.data;
 };
 
@@ -60,7 +71,7 @@ export const fetchUser = async () => {
 
 // Example: Fetch user details by user ID
 export const fetchUserById = async (id: number) => {
-  const response = await api.get(`${api}/user/${id}`);
+  const response = await api.get(`/user/${id}`);
   return response.data;
 };
 
@@ -81,19 +92,19 @@ export const updateUser = async (id: number, data: {
   password?: string;
   role?: string;
 }) => {
-  const response = await api.put(`${api}/user/${id}`, data);
+  const response = await api.put(`/user/${id}`, data);
   return response.data;
 };
 
 // Delete a user by ID
 export const deleteUser = async (id: number) => {
-  const response = await api.delete(`${api}/user/${id}`);
+  const response = await api.delete(`/user/${id}`);
   return response.data;
 };
 
 // Get all flashcard sets by user ID
 export const fetchSetsByUser = async (userId: number) => {
-  const response = await api.get(`${api}/user/${userId}/set`);
+  const response = await api.get(`/user/${userId}/set`);
   return response.data;
 };
 
@@ -102,7 +113,7 @@ export const fetchSetsByUser = async (userId: number) => {
 // Get all flashcard set collections created by a user
 export const getFlashcardCollectionsByUser = async (userId: number, setId: number) => {
     try {
-        const response = await axios.get(`${api}/users/${userId}/collection`, {
+        const response = await axios.get(`/users/${userId}/collection`, {
             params: { setId },
         });
         return response.data;  // Return the collection data
@@ -115,7 +126,7 @@ export const getFlashcardCollectionsByUser = async (userId: number, setId: numbe
 // Get a flashcard set collection by ID
 export const getFlashcardCollectionById = async (userId: number, collectionId: number) => {
     try {
-        const response = await axios.get(`${api}/user/${userId}/collection/${collectionId}`);
+        const response = await axios.get(`/user/${userId}/collection/${collectionId}`);
         return response.data;  // Return the collection data
     } catch (error) {
         console.error('Error fetching flashcard collection:', error);
@@ -126,7 +137,7 @@ export const getFlashcardCollectionById = async (userId: number, collectionId: n
 // Create a new flashcard set collection
 export const createFlashcardCollection = async (comment: string, setId: number, name?: string) => {
     try {
-        const response = await axios.post(`${api}/collections`, {
+        const response = await axios.post(`/collections`, {
             comment,
             setID: setId,
             name
@@ -141,7 +152,7 @@ export const createFlashcardCollection = async (comment: string, setId: number, 
 // Update a flashcard set collection by ID
 export const updateFlashcardCollection = async (collectionId: number, comments: string, setId: number) => {
     try {
-        const response = await axios.put(`${api}/collection/${collectionId}`, {
+        const response = await axios.put(`/collection/${collectionId}`, {
             comments,
             setId
         });
@@ -155,7 +166,7 @@ export const updateFlashcardCollection = async (collectionId: number, comments: 
 // Delete a flashcard set collection by ID
 export const deleteFlashcardCollection = async (collectionId: number) => {
     try {
-        await axios.delete(`${api}/collection/${collectionId}`);
+        await axios.delete(`/collection/${collectionId}`);
         return true;  // Return true if deletion was successful
     } catch (error) {
         console.error('Error deleting flashcard collection:', error);
@@ -166,7 +177,7 @@ export const deleteFlashcardCollection = async (collectionId: number) => {
 // Get all flashcard collections
 export const getAllFlashcardCollections = async () => {
     try {
-        const response = await axios.get(`${api}/collections`);
+        const response = await axios.get(`/collections`);
         return response.data;  // Return all collections
     } catch (error) {
         console.error('Error fetching all flashcard collections:', error);
@@ -177,7 +188,7 @@ export const getAllFlashcardCollections = async () => {
 // Get a random flashcard set collection
 export const getRandomFlashcardCollection = async () => {
     try {
-        const response = await axios.get(`${api}/collections/random`);
+        const response = await axios.get(`/collections/random`);
         return response.data;  // Return the random collection data
     } catch (error) {
         console.error('Error fetching random flashcard collection:', error);
@@ -188,7 +199,7 @@ export const getRandomFlashcardCollection = async () => {
 // Create a telemetry entry
 export const createTelemetry = async (eventType: string, userId: number, additionalInfo?: string) => {
     try {
-        const response = await axios.post(`${api}/telemetry`, {
+        const response = await axios.post(`/telemetry`, {
             eventType,
             userId,
             additionalInfo

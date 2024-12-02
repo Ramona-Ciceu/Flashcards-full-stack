@@ -97,77 +97,76 @@ app.get('/protected', authMiddleware, async (req: Request & { user?: any }, res:
 });
 
 
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  console.log(`Received login request: ${username}`);
 
-         //Routes for login
- app.get('/login', async (req: Request, res: Response) => {
-   const { username, password } = req.body;
-        
-     try {
-            const user = await prisma.user.findFirst({
-              where: { username },
-            });
-        
-            if (user && user.password === password) {
-              // Create and send a token (e.g., JWT)
-              const token = 'some-generated-token';  // Use JWT or another method
-              res.status(200).json({ token });
-            } else {
-              res.status(401).json({ error: 'Invalid credentials' });
-            }
-          } catch (error) {
-            res.status(500).json({ error: 'Error logging in.' });
-          }
-        });
+  try {
+    const user = await prisma.user.findFirst({
+      where: { username },
+    });
+
+    if (user && user.password === password) {
+      const token = 'some-generated-token'; // Use JWT or another method
+      res.status(200).json({ token });
+    } else {
+      res.status(401).json({ error: 'Invalid credentials' });
+    }
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).json({ error: 'Error logging in.' });
+  }
+});
+
         
 // ===========================
 // Flashcard Set Routes
 // ===========================
-  
-// Get all flashcard sets
-app.get('/set', async (req: Request, res: Response) => {
-    try {
-      //Fetches all the sets from the database with specific fields.
-        const sets = await prisma.set.findMany({
-         
-            select: {
-                
-                name: true,
-               
-            }
-        });
-        //Return the flashcard set
-        res.status(200).json(sets);
-    } catch (error) {
-       res.status(500).json({ error: 'Error fetching sets. ' });
+ // Get all flashcard sets
+ app.get('/set', async (req: Request, res: Response) => {
+  try {
+    const sets = await prisma.set.findMany({
+      select: { name: true },
+    });
 
+    if (sets.length === 0) {
+       res.status(404).json({ error: 'No sets found.' });
+       return;
     }
+
+    res.status(200).json(sets);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error fetching sets.' });
+  }
 });
 
-// CREATE a new set
+
+// Create a new set with a limit of 20 sets per day for non-admin users
 app.post('/set', async (req: Request, res: Response) => {
   const { name, userId } = req.body;
 
   try {
-    // Retrieve the user by userId to check their role
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-       res.status(404).json({ error: 'User not found' });
-       return;
+    if (!name || !userId) {
+      res.status(400).json({ error: 'Missing name or userId in request body' });
+      return;
     }
 
-    // If the user is not an admin, check the number of sets created today
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Non-admin users can create a maximum of 20 sets per day
     if (user.role !== 'admin') {
       const today = new Date();
       const startOfDay = new Date(today.setHours(0, 0, 0, 0));
       const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-      // Check how many sets have been created by the user today
       const setsCreatedToday = await prisma.set.count({
         where: {
-          userId: user.id,  // Check sets created by the user
+          userId: user.id,
           createdAt: {
             gte: startOfDay,
             lt: endOfDay,
@@ -175,100 +174,178 @@ app.post('/set', async (req: Request, res: Response) => {
         },
       });
 
-      // Enforce a limit of 20 sets per day for non-admin users
       if (setsCreatedToday >= 20) {
-         res.status(429).json({ error: 'You have reached the maximum number of flashcard sets allowed today' });
-         return;
+        res.status(429).json({
+          error: 'You have reached the maximum number of flashcard sets allowed today.',
+        });
+        return;
       }
     }
 
-    // Create the new set in the database
-    const set = await prisma.set.create({
-      data: {
-        name,
-        userId,
-      },
+    // Create the new set
+    const newSet = await prisma.set.create({
+      data: { name, userId },
     });
 
-    // Return the created set with a 201 status code
-    res.status(201).json(set);
-
+    res.status(201).json(newSet);
   } catch (error) {
+    console.error('Error creating set:', error);
     res.status(500).json({ error: 'Error creating set' });
   }
 });
-
-
-
-// GET a specific set by ID
-  app.get('/set/:id', async (req: Request, res: Response) => {
-    const { id } = req.params; 
-    try {
-      //Retrive the set with the specified ID
-        const sets = await prisma.set.findUnique({
-         
-            where: { id: Number(id), },
-     });
-     //Response with the set if found
-        res.status(200).json(sets); 
-    } catch (error) {
-       res.status(404).json({ error: 'Error fetching sets. ' });
-
-    }
+app.get('/test', (req: Request, res: Response) => {
+  res.status(200).json({ message: 'Test route working' });
 });
-  
-// UPDATE a set by ID
-app.put('/set/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
-    //Extract fields to update
-    const { name } = req.body;
-
-    if (!id || isNaN(Number(id))) { 
-       res.status(400).json({ error: 'Invalid id parameter' }); return; } 
-       if (!name ) { 
-         res.status(400).json({ error: 'No fields to update' }); 
-         return; }
-  
-    try {
-      //Update the ste in the database
-      const updatedSet = await prisma.set.update({
-        where: {
-          id: Number(id),
-        },
-        data: {
-          name,
-        },
-      });
-  
-      res.status(200).json(updatedSet);
-      console.log("The updated flashcard set");
-    } catch (error) {
-      console.error(error);
-      res.status(404).json({ error: 'The flashcard set was not found' });
-    }
-  });
-  
 
 
-
-// DELETE a set by ID
-app.delete('/set/:id', async (req: Request, res: Response) => {
- 
+// Get a specific set by ID
+app.get('/set/:id', async (req: Request, res: Response) => {
+  console.log('Route hit');
+  const { id } = req.params;
+  
   try {
-    const { id } = req.params;
-// Optionally, delete all flashcards in the set first
-  await prisma.flashcard.deleteMany({
-    where: { setId: parseInt(id) },
+    const set = await prisma.set.findUnique({
+      where: { id: Number(id) }
+    });
+
+    if (!set) {
+      console.log('Set not found');
+       res.status(404).json({ error: 'Set not found' });
+       return;
+    }
+    console.log('Set found: ', set);
+    res.status(200).json(set);
+  } catch (error) {
+    console.error('Error fetching set:', error);
+    res.status(500).json({ error: 'Error fetching set' });
+    return;
+  }
 });
-    //Delete the set from the database
-    await prisma.set.delete({
-      where: {
-        id: parseInt(id),
+
+// Update a set by ID
+app.put('/set/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  if (!name) {
+     res.status(400).json({ error: 'No fields to update' });
+     return;
+  }
+
+  try {
+    const updatedSet = await prisma.set.update({
+      where: { id: Number(id) },
+      data: { name },
+    });
+
+    res.status(200).json(updatedSet);
+  } catch (error) {
+    res.status(404).json({ error: 'Set not found' });
+  }
+});
+
+// Delete a set by ID
+app.delete('/set/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.flashcard.deleteMany({ where: { setId: parseInt(id) } });
+    await prisma.set.delete({ where: { id: parseInt(id) } });
+
+    res.status(204).json({ message: 'Flashcard set deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting set' });
+  }
+});
+
+// Get all flashcards in a specific set
+app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const { shuffle } = req.query;
+  
+  try {
+    let flashcards = await prisma.flashcard.findMany({
+      where: { setId: Number(id) },
+      select: { question: true, solution: true, difficulty: true },
+    });
+
+    if (shuffle === 'true') {
+      flashcards = flashcards.sort(() => Math.random() - 0.5);
+    }
+
+    if (flashcards.length === 0) {
+       res.status(404).json({ error: 'No flashcards found for the set' });
+       return;
+      }
+
+    res.status(200).json(flashcards);
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: 'Error fetching flashcards' });
+  }
+});
+
+// Create a flashcard in a specific set
+app.post('/set/:id/flashcard', async (req: Request, res: Response) => {
+  const { setId, question, solution, difficulty } = req.body;
+
+  try {
+    const set = await prisma.set.findUnique({ where: { id: Number(setId) } });
+
+    if (!set) {
+       res.status(404).json({ error: 'Set not found' });
+       return;
+    }
+
+    const newFlashcard = await prisma.flashcard.create({
+      data: {
+        question,
+        solution,
+        difficulty,
+        set: { connect: { id: Number(setId) } },
       },
     });
-    res.status(204).json({ message: 'The flashcard set was deleted' });
+
+    res.status(201).json(newFlashcard);
   } catch (error) {
-    res.status(404).json({ error: 'The flashcard set was not found' });
+    res.status(500).json({ error: 'Error creating flashcard' });
+  }
+});
+
+// Update a flashcard in a set
+app.put('/set/:setId/flashcard/:flashcardId', async (req: Request, res: Response) => {
+  const { setId, flashcardId } = req.params;
+  const { question, solution, difficulty } = req.body;
+
+  try {
+    const flashcard = await prisma.flashcard.findUnique({ where: { id: Number(flashcardId) } });
+
+    if (!flashcard) {
+       res.status(404).json({ error: 'Flashcard not found' });
+       return;
+    }
+
+    const updatedFlashcard = await prisma.flashcard.update({
+      where: { id: Number(flashcardId) },
+      data: { question, solution, difficulty },
+    });
+
+    res.status(200).json(updatedFlashcard);
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating flashcard' });
+  }
+});
+
+// Delete a flashcard from a set
+app.delete('/set/:setId/flashcard/:flashcardId', async (req: Request, res: Response) => {
+  const { setId, flashcardId } = req.params;
+
+  try {
+    await prisma.flashcard.delete({ where: { id: Number(flashcardId) } });
+    res.status(200).json({ message: 'Flashcard deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting flashcard' });
   }
 });
 
@@ -309,183 +386,6 @@ app.post('/set/:id/comments', async (req: Request, res: Response) => {
   }
   });
  
-  
-// GET all flashcards in a specific set, with an optional shuffle
-app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
-  const { id } = req.params;  // ID of the flashcard set
-  const numericId = Number(id);
-
-  if (isNaN(numericId)) {
-    res.status(400).json({
-      error: 'Invalid set ID',
-    });
-    return;  // Ensure the function exits if the ID is invalid
-  }
-
-  // Whether to shuffle the flashcards
-  const { shuffle } = req.query;
-
-  try {
-    // Retrieve flashcards for the given set ID
-    let flashcards = await prisma.flashcard.findMany({
-      where: {
-        setId: numericId,
-      },
-      select: {
-        question: true,
-        solution: true,
-        difficulty: true,
-      },
-    });
-
-    // If shuffle is true, randomize the order of flashcards
-    if (shuffle === 'true') {
-      flashcards = flashcards.sort(() => Math.random() - 0.5);
-    }
-
-    // If no flashcards are found, return a 404 error
-    if (flashcards.length === 0) {
-      res.status(404).json({ error: 'No flashcards found for the set' });
-      return;
-    }
-
-    res.status(200).json(flashcards);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error retrieving flashcards' });
-  return;
-  }
-});
-
-
-app.post('/set/:id/flashcard', async (req: Request, res: Response) => {
-  const { setId, question, solution, difficulty} = req.body;
-
-  try {
-    // Validate difficulty value
-    const validDifficulties = ["easy", "medium", "hard"];
-    if (!validDifficulties.includes(difficulty)) {
-       res.status(400).json({ error: 'Invalid difficulty. Valid values are "easy", "medium", "hard".' });
-    return;
-      }
-
-    // Check if the set exists
-    const set = await prisma.set.findUnique({
-      where: { id: parseInt(setId) },
-    });
-
-    if (!set) {
-      res.status(404).json({ error: 'Set not found' });
-      return;
-    }
-
-    // Create the flashcard and associate it with the set
-    const newflashcard = await prisma.flashcard.create({
-      data: {
-        question,
-        solution,
-        difficulty,  
-        set: {
-          connect: { id: parseInt(setId) },
-        },
-      },
-    });
-
-    res.status(201).json(newflashcard);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while adding the flashcard' });
-  return;
-  }
-});
-
-// PUT update a flashcard
-app.put('set/:id/flashcard/:id', async (req: Request, res: Response) => {
-  const { id } = req.params; // ID of the flashcard to be updated
-  const { question, solution, difficulty } = req.body;
-
-  const numericId = Number(id);
-
-  if (isNaN(numericId)) {
-    res.status(400).json({
-      error: 'Invalid flashcard ID',
-    });
-    return;
-  }
-
-  try {
-    // Validate difficulty value
-    const validDifficulties = ["easy", "medium", "hard"];
-    if (difficulty && !validDifficulties.includes(difficulty)) {
-      res.status(400).json({
-        error: 'Invalid difficulty. Valid values are "easy", "medium", "hard".',
-      });
-      return;
-    }
-
-    // Find the flashcard to update
-    const flashcard = await prisma.flashcard.findUnique({
-      where: { id: numericId },
-    });
-
-    if (!flashcard) {
-      res.status(404).json({ error: 'Flashcard not found' });
-      return;
-    }
-
-    // Update the flashcard
-    const updatedFlashcard = await prisma.flashcard.update({
-      where: { id: numericId },
-      data: {
-        question: question || flashcard.question,  
-        solution: solution || flashcard.solution, 
-        difficulty: difficulty || flashcard.difficulty, 
-      },
-    });
-
-    res.status(200).json(updatedFlashcard);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while updating the flashcard' });
-  }
-});
-
-// DELETE a flashcard byt set id
-app.delete('set/:id/flashcard/:id', async (req: Request, res: Response) => {
-  const { id } = req.params; 
-  const numericId = Number(id);
-
-  if (isNaN(numericId)) {
-    res.status(400).json({
-      error: 'Invalid flashcard ID',
-    });
-    return;
-  }
-
-  try {
-    // Find the flashcard to delete
-    const flashcard = await prisma.flashcard.findUnique({
-      where: { id: numericId },
-    });
-
-    if (!flashcard) {
-      res.status(404).json({ error: 'Flashcard not found' });
-      return;
-    }
-
-    // Delete the flashcard
-    await prisma.flashcard.delete({
-      where: { id: numericId },
-    });
-
-    res.status(200).json({ message: 'Flashcard deleted successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while deleting the flashcard' });
-  }
-});
-
-
 
 // ===========================
 // User Routes
@@ -496,9 +396,8 @@ app.get('/user', async (req: Request, res: Response) => {
         const users = await prisma.user.findMany({
          
             select: {
-                id: true,
                 username: true,
-                password: true,
+                role: true,
 
             }
         });
@@ -586,69 +485,73 @@ app.get('/user/:id', async (req: Request, res: Response) => {
 });
 
 // Update user by ID
-
 app.put('/user/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { username, password, role } = req.body;
+  const { id } = req.params;
+  const { username, password, role } = req.body;
 
-    // Checking the admin status manually or via a header/authorization mechanism
-    // Check for admin via headers
-    const isAdmin = req.headers['x-role'] === 'admin'; 
+  // Checking the admin status manually or via a header/authorization mechanism
+  const isAdmin = req.headers['x-role'] === 'admin';
 
-    // Check if the user is allowed to change the role (only admin can assign roles)
-    if (role !== undefined && !isAdmin) {
-         res.status(403).json({
-            error: 'Not authorized to change user role.',
-        }); return;
-    }
+  // Log the role being sent and the current admin status
+  console.log(`Role from request: ${role}, isAdmin: ${isAdmin}`);
 
-    try {
+  // Check if the user is allowed to change the role (only admin can assign roles)
+  if (role !== undefined && !isAdmin) {
+      res.status(403).json({
+          error: 'Not authorized to change user role.',
+      });
+      return;
+  }
+
+  try {
       const numericId = Number(id);
-      if(isNaN(numericId)){
-        res.status(400).json({error : 'Invalid user ID'});
-        return;
+      if (isNaN(numericId)) {
+          res.status(400).json({ error: 'Invalid user ID' });
+          return;
       }
-        // Find user by ID
-        const user = await prisma.user.findUnique({
-            where: { id: Number(id) },
-        });
 
-        if (!user) {
-             res.status(404).json({ error: 'User not found.' });
-        }
+      // Find user by ID
+      const user = await prisma.user.findUnique({
+          where: { id: numericId },
+      });
 
-        // Hash the password if provided
-        const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+      if (!user) {
+          res.status(404).json({ error: 'User not found.' });
+          return;
+      }
 
-        // Update user with the provided data
-        const updatedUser = await prisma.user.update({
-            where: { id: numericId },
-            data: {
-              //Keep the existing user if exists
-                username: username || user?.username, 
-                // Keep the existing password if not provided
-                password: hashedPassword || user?.password, 
-                // Keep the existing role if not provided
-                role: role || user?.role, 
-            },
-        });
+      // Hash the password if provided
+      const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
-        // Return the updated user
-        res.status(200).json(updatedUser);
-        console.log("The updated user:", updatedUser);
-    } catch (error) {
-        console.error(error);
-        res.status(404).json({ error: 'The user wa snot found.' });
-    }
+      // Update user with the provided data
+      const updatedUser = await prisma.user.update({
+          where: { id: numericId },
+          data: {
+              username: username || user.username, // Keep the existing username if not provided
+              password: hashedPassword || user.password, // Keep the existing password if not provided
+              role: role || user.role, // Keep the existing role if not provided
+          },
+      });
+
+      // Return the updated user
+      res.status(200).json(updatedUser);
+      console.log('The updated user:', updatedUser);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'An error occurred while updating the user.' });
+  }
 });
+
+
+
   // DELETE an user by ID
 app.delete('/user/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { userId } = req.params;
   
     try {
       await prisma.user.delete({
         where: {
-          id: parseInt(id),
+          id: parseInt(userId),
         },
       });
       res.status(204).json({ message: 'The user  was deleted' });
@@ -696,7 +599,7 @@ app.get('/user/:userID/set', async (req: Request, res: Response) => {
   });
 
 //Get all flashcards set collections created by a user
-app.get('/users/:userId/collection', async (req: Request, res: Response) => {
+app.get('/user/:userId/collection', async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { setId} = req.query;
   
@@ -861,7 +764,7 @@ app.delete('/collection/:id', async (req: Request, res: Response) => {
   });
 
   // GET endpoint to retrieve all flashcard set collections
-app.get('/collections', async (req: Request, res: Response) => {
+app.get('/collection', async (req: Request, res: Response) => {
     try {
       // Retrieve all collections with associated set, user, and comment
       const collections = await prisma.collection.findMany({
@@ -884,8 +787,8 @@ app.get('/collections', async (req: Request, res: Response) => {
   });
 
 // POST endpoint to create a new flashcard set collection
-app.post('/collections', middleware, async (req: Request, res: Response) => {
-    const { comment, setID } = req.body;
+app.post('/collection', middleware, async (req: Request, res: Response) => {
+    const { comment, setID , userID} = req.body;
   
     // Ensure the necessary fields are provided
     if (!comment || !setID) {
@@ -915,7 +818,7 @@ app.post('/collections', middleware, async (req: Request, res: Response) => {
           commentId: comment ,
            name: name,
             setId: setID,
-            userId: 1, 
+            userId: userID, 
         },
         include: {
           set: true,  

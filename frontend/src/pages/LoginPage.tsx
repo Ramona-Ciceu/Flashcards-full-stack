@@ -12,15 +12,15 @@ const LoginPage: React.FC = () => {
     try {
       // Send login request directly from here
       const response = await axios.post('http://localhost:3000/login', {
-        username,
-        password,
+       username,
+      password,
       });
 
       // If the response contains a token, login is successful
       if (response.data.token) {
         localStorage.setItem('token', response.data.token); // Store the token
         alert('Login successful!');
-        navigate('/home'); // Navigate to the home page
+        navigate('/HomePage'); // Navigate to the home page
       } else {
         setErrorMessage('Invalid credentials.');
       }

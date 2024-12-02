@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { fetchFlashcardSet } from "../utils/api";
+import React, { useState } from "react";
+import {updateSet, deleteSet} from "../utils/api";
 
-// Define an interface for the flashcard
+// Define interfaces
 interface Flashcard {
   setId: number;
   question: string;
@@ -9,164 +9,190 @@ interface Flashcard {
   difficulty: string;
 }
 
+interface Sets {
+  id: number;
+  name: string;
+}
+
 const FlashcardSetPage: React.FC = () => {
+  const [sets, setSets] = useState<Sets[]>([]);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const [newSetName, setNewSetName] = useState("");
   const [newFlashcard, setNewFlashcard] = useState<Flashcard>({
     setId: 0,
     question: "",
     solution: "",
     difficulty: "",
   });
-  const [flashcardCount, setFlashcardCount] = useState<number>(0);
-  const [expandedSets, setExpandedSets] = useState<Set<number>>(new Set());
-  const [flipped, setFlipped] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
-    const existingFlashcards: Flashcard[] = [
-      { setId: 1, question: "What is the capital of France?", solution: "Paris", difficulty: "easy" },
-      { setId: 1, question: "What is the capital of Italy?", solution: "Rome", difficulty: "easy" },
-      { setId: 2, question: "What is 2 + 2?", solution: "4", difficulty: "easy" },
-    ];
-    setFlashcards(existingFlashcards);
-    setFlashcardCount(existingFlashcards.length);
-  }, []);
+  const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
 
-  const handleAddFlashcard = () => {
-    if (flashcardCount >= 20) {
-      alert("You cannot add more than 20 flashcards today.");
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+
+  const handleAddSet = () => {
+    if (!newSetName) {
+      alert("Please provide a set name.");
       return;
     }
+    const newSet: Sets = { id: sets.length + 1, name: newSetName };
+    setSets([...sets, newSet]);
+    setNewSetName("");
+  };
 
-    if (newFlashcard.setId === 0 || !newFlashcard.question || !newFlashcard.solution || !newFlashcard.difficulty) {
-      alert("Please provide setId, question, solution, and difficulty.");
+  const handleAddFlashcard = () => {
+    if (!selectedSetId || !newFlashcard.question || !newFlashcard.solution || !newFlashcard.difficulty) {
+      alert("Please complete all fields.");
       return;
     }
 
     const newCard: Flashcard = {
-      setId: newFlashcard.setId,
+      setId: selectedSetId,
       question: newFlashcard.question,
       solution: newFlashcard.solution,
       difficulty: newFlashcard.difficulty,
     };
     setFlashcards([...flashcards, newCard]);
-    setFlashcardCount(flashcardCount + 1);
     setNewFlashcard({ setId: 0, question: "", solution: "", difficulty: "" });
   };
 
-  const handleFlip = (index: number) => {
-    setFlipped((prevFlipped) => {
-      const newFlipped = new Set(prevFlipped);
-      if (newFlipped.has(index)) {
-        newFlipped.delete(index);
-      } else {
-        newFlipped.add(index);
-      }
-      return newFlipped;
-    });
+  const handleSelectSet = (setId: number) => {
+    setSelectedSetId(setId);
   };
 
-  const handleToggleSet = (setId: number) => {
-    const newExpandedSets = new Set(expandedSets);
-    if (newExpandedSets.has(setId)) {
-      newExpandedSets.delete(setId);
+  const handleFlipCard = (index: number) => {
+    const updatedFlippedCards = new Set(flippedCards);
+    if (updatedFlippedCards.has(index)) {
+      updatedFlippedCards.delete(index);
     } else {
-      newExpandedSets.add(setId);
+      updatedFlippedCards.add(index);
     }
-    setExpandedSets(newExpandedSets);
+    setFlippedCards(updatedFlippedCards);
   };
 
-  const groupFlashcardsBySetId = () => {
-    return flashcards.reduce((groups, card: Flashcard) => {
-      const { setId } = card;
-      if (!groups[setId]) {
-        groups[setId] = [];
-      }
-      groups[setId].push(card);
-      return groups;
-    }, {} as Record<number, Flashcard[]>);
+  const handleEditSet = async (setId: number, newName: string) => {
+    try {
+      const updatedSet = await updateSet(setId, { name: newName, description: "Updated description" });
+      setSets(sets.map((set) => (set.id === setId ? updatedSet : set)));
+      setNewSetName(""); // Clear the input after editing
+    } catch (error) {
+      alert("Error updating set.");
+    }
   };
-
-  const groupedFlashcards = groupFlashcardsBySetId();
+  
+  // Delete Set Handler
+  const handleDeleteSet = async (setId: number) => {
+    try {
+      await deleteSet(setId);
+      setSets(sets.filter((set) => set.id !== setId)); // Remove the deleted set from the state
+      setFlashcards(flashcards.filter((card) => card.setId !== setId)); // Remove related flashcards
+    } catch (error) {
+      alert("Error deleting set.");
+    }
+  };
 
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
-      <h2 className="text-3xl font-bold mb-4">Create Flashcard</h2>
-      <div className="mb-6">
-        <input
-          type="number"
-          placeholder="Enter set ID"
-          value={newFlashcard.setId}
-          onChange={(e) => setNewFlashcard({ ...newFlashcard, setId: parseInt(e.target.value, 10) })}
-          className="p-2 border mb-4 w-full"
-        />
+      {/* Create Set Section */}
+      <div>
         <input
           type="text"
-          placeholder="Enter question"
-          value={newFlashcard.question}
-          onChange={(e) => setNewFlashcard({ ...newFlashcard, question: e.target.value })}
+          placeholder="Enter set name"
+          value={newSetName}
+          onChange={(e) => setNewSetName(e.target.value)}
           className="p-2 border mb-4 w-full"
         />
-        <input
-          type="text"
-          placeholder="Enter solution"
-          value={newFlashcard.solution}
-          onChange={(e) => setNewFlashcard({ ...newFlashcard, solution: e.target.value })}
-          className="p-2 border mb-4 w-full"
-        />
-        <input
-          type="text"
-          placeholder="Enter difficulty: easy, medium or hard."
-          value={newFlashcard.difficulty}
-          onChange={(e) => setNewFlashcard({ ...newFlashcard, difficulty: e.target.value })}
-          className="p-2 border mb-4 w-full"
-        />
-        <button
-          onClick={handleAddFlashcard}
-          className="p-2 bg-cyan-500 text-white rounded-lg hover:bg-green-600"
-        >
-          Add Flashcard
+        <button onClick={handleAddSet} className="p-2 bg-cyan-500 text-white rounded-lg hover:bg-green-500">
+          Create Set
         </button>
       </div>
 
-      <h3 className="text-2xl font-semibold mb-4">Flashcards</h3>
-      <h4>Click on the flahscard to reveal the solution. </h4>
-      {Object.keys(groupedFlashcards).map((setId) => (
-        <div key={setId}>
-          <h4 className="text-xl font-bold mb-2">Set ID: {setId}</h4>
-          <button
-            onClick={() => handleToggleSet(Number(setId))}
-            className="mb-4 p-2 bg-cyan-500 text-white rounded-lg hover:bg-green-600"
-          >
-            {expandedSets.has(Number(setId)) ? "Hide Flashcards" : "Show Flashcards"}
-          </button>
-          {expandedSets.has(Number(setId)) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {groupedFlashcards[Number(setId)].map((card, index) => (
-                <div key={index} className="bg-cyan-100 shadow-lg rounded-lg overflow-hidden">
-                  <div className="p-4 flex flex-col items-start h-40">
-                    <div className="text-sm text-gray-500 mb-2">
-                      <strong>Difficulty:</strong> {card.difficulty}
-                    </div>
-                    <div className="flex-grow flex items-center justify-center w-full">
-                      <div>
-                        <strong className="block text-gray-800">
-                          {flipped.has(index) ? "Solution:" : "Question:"}
-                        </strong>
-                        <span
-                          className="font-bold cursor-pointer text-blue-500"
-                          onClick={() => handleFlip(index)}
-                        >
-                          {flipped.has(index) ? card.solution : card.question}
-                        </span>
+      {/* Flashcard Set Selection */}
+      <div>
+        <h3>Select a Set to Add Flashcards:</h3>
+        <select
+          value={selectedSetId || ""}
+          onChange={(e) => handleSelectSet(Number(e.target.value))}
+          className="p-2 border mb-4 w-full"
+        >
+          <option value="">-- Select a Set --</option>
+          {sets.map((set) => (
+            <option key={set.id} value={set.id}>
+              {set.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Create Flashcard Section */}
+      <div>
+        {selectedSetId && (
+          <div>
+            <input
+              type="text"
+              placeholder="Enter question"
+              value={newFlashcard.question}
+              onChange={(e) => setNewFlashcard({ ...newFlashcard, question: e.target.value })}
+              className="p-2 border mb-4 w-full"
+            />
+            <input
+              type="text"
+              placeholder="Enter solution"
+              value={newFlashcard.solution}
+              onChange={(e) => setNewFlashcard({ ...newFlashcard, solution: e.target.value })}
+              className="p-2 border mb-4 w-full"
+            />
+            <input
+              type="text"
+              placeholder="Enter difficulty"
+              value={newFlashcard.difficulty}
+              onChange={(e) => setNewFlashcard({ ...newFlashcard, difficulty: e.target.value })}
+              className="p-2 border mb-4 w-full"
+            />
+            <button
+              onClick={handleAddFlashcard}
+              className="p-2 bg-cyan-500 text-white rounded-lg hover:bg-green-500"
+            >
+              Add Flashcard
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Display Flashcards for the Selected Set */}
+      <div>
+        {sets.map((set) => (
+          <div key={set.id}>
+            {set.id === selectedSetId && (
+              <div>
+                
+                <h3>{set.name} Flashcards:</h3>
+                {flashcards
+                  .filter((card) => card.setId === set.id)
+                  .map((card, index) => (
+                    <div
+                      key={index}
+                      className={`p-4 mb-4 rounded-lg shadow-lg cursor-pointer transform transition-transform ${
+                        flippedCards.has(index) ? "rotate-y-180" : "rotate-y-0"
+                      }`}
+                      onClick={() => handleFlipCard(index)}
+                    >
+                      <div className="flex justify-between">
+                        <div><strong>Question:</strong> {card.question}</div>
+                        <div><strong>Difficulty:</strong> {card.difficulty}</div>
                       </div>
+                      {flippedCards.has(index) && (
+                        <div className="mt-4">
+                          <strong>Solution:</strong> {card.solution}
+                        </div>
+                        
+                      )}
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+                  ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
