@@ -23,6 +23,7 @@ const SignupPage: React.FC = () => {
         setErrorMessage('Failed to create user.');
       }
     } catch (error) {
+      console.error(error)
       setErrorMessage('An error occurred during registration. Please try again.');
     }
   };

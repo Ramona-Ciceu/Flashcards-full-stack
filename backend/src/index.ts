@@ -96,29 +96,10 @@ app.get('/protected', authMiddleware, async (req: Request & { user?: any }, res:
   }
 });
 
-//Route for signup
-app.post('/signup', async (req: Request, res: Response): Promise<void> => {
-  const { username, password, role } = req.body;
-  
-  try {
-    // Hash the user's password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Create the user in the database
-    const user = await prisma.user.create({
-      data: { username, password: hashedPassword, role },
-    });
-
-    // Return only the user object (no token)
-    res.status(201).json({ user });
-  } catch (error) {
-    res.status(500).json({ error: 'User could not be created' });
-  }
-});
 
 
          //Routes for login
- app.post('/login', async (req: Request, res: Response) => {
+ app.get('/login', async (req: Request, res: Response) => {
    const { username, password } = req.body;
         
      try {
@@ -147,12 +128,11 @@ app.get('/set', async (req: Request, res: Response) => {
     try {
       //Fetches all the sets from the database with specific fields.
         const sets = await prisma.set.findMany({
-          //  where: { private: false },
+         
             select: {
-                id: true,
+                
                 name: true,
-                description: true,
-                flashcards: true
+               
             }
         });
         //Return the flashcard set
@@ -165,7 +145,7 @@ app.get('/set', async (req: Request, res: Response) => {
 
 // CREATE a new set
 app.post('/set', async (req: Request, res: Response) => {
-  const { name, description, userId } = req.body;
+  const { name, userId } = req.body;
 
   try {
     // Retrieve the user by userId to check their role
@@ -206,7 +186,6 @@ app.post('/set', async (req: Request, res: Response) => {
     const set = await prisma.set.create({
       data: {
         name,
-        description,
         userId,
       },
     });
@@ -242,11 +221,11 @@ app.post('/set', async (req: Request, res: Response) => {
 app.put('/set/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     //Extract fields to update
-    const { name, description } = req.body;
+    const { name } = req.body;
 
     if (!id || isNaN(Number(id))) { 
        res.status(400).json({ error: 'Invalid id parameter' }); return; } 
-       if (!name && !description) { 
+       if (!name ) { 
          res.status(400).json({ error: 'No fields to update' }); 
          return; }
   
@@ -258,7 +237,6 @@ app.put('/set/:id', async (req: Request, res: Response) => {
         },
         data: {
           name,
-          description,
         },
       });
   
@@ -354,7 +332,6 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
         setId: numericId,
       },
       select: {
-        id: true,
         question: true,
         solution: true,
         difficulty: true,
@@ -381,7 +358,7 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
 });
 
 
-app.post('/flashcards', async (req: Request, res: Response) => {
+app.post('/set/:id/flashcard', async (req: Request, res: Response) => {
   const { setId, question, solution, difficulty} = req.body;
 
   try {
@@ -421,6 +398,93 @@ app.post('/flashcards', async (req: Request, res: Response) => {
   return;
   }
 });
+
+// PUT update a flashcard
+app.put('set/:id/flashcard/:id', async (req: Request, res: Response) => {
+  const { id } = req.params; // ID of the flashcard to be updated
+  const { question, solution, difficulty } = req.body;
+
+  const numericId = Number(id);
+
+  if (isNaN(numericId)) {
+    res.status(400).json({
+      error: 'Invalid flashcard ID',
+    });
+    return;
+  }
+
+  try {
+    // Validate difficulty value
+    const validDifficulties = ["easy", "medium", "hard"];
+    if (difficulty && !validDifficulties.includes(difficulty)) {
+      res.status(400).json({
+        error: 'Invalid difficulty. Valid values are "easy", "medium", "hard".',
+      });
+      return;
+    }
+
+    // Find the flashcard to update
+    const flashcard = await prisma.flashcard.findUnique({
+      where: { id: numericId },
+    });
+
+    if (!flashcard) {
+      res.status(404).json({ error: 'Flashcard not found' });
+      return;
+    }
+
+    // Update the flashcard
+    const updatedFlashcard = await prisma.flashcard.update({
+      where: { id: numericId },
+      data: {
+        question: question || flashcard.question,  
+        solution: solution || flashcard.solution, 
+        difficulty: difficulty || flashcard.difficulty, 
+      },
+    });
+
+    res.status(200).json(updatedFlashcard);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while updating the flashcard' });
+  }
+});
+
+// DELETE a flashcard byt set id
+app.delete('set/:id/flashcard/:id', async (req: Request, res: Response) => {
+  const { id } = req.params; 
+  const numericId = Number(id);
+
+  if (isNaN(numericId)) {
+    res.status(400).json({
+      error: 'Invalid flashcard ID',
+    });
+    return;
+  }
+
+  try {
+    // Find the flashcard to delete
+    const flashcard = await prisma.flashcard.findUnique({
+      where: { id: numericId },
+    });
+
+    if (!flashcard) {
+      res.status(404).json({ error: 'Flashcard not found' });
+      return;
+    }
+
+    // Delete the flashcard
+    await prisma.flashcard.delete({
+      where: { id: numericId },
+    });
+
+    res.status(200).json({ message: 'Flashcard deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while deleting the flashcard' });
+  }
+});
+
 
 
 // ===========================
