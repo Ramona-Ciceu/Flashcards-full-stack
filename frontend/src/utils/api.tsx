@@ -8,6 +8,9 @@ const api = axios.create({
   },
 });
 
+//
+// SET CALLS
+//
 //Fetch all the flashcards sets
 export const fetchSets = async () => {
   const response = await api.get(`/set`);
@@ -18,7 +21,7 @@ export const createSet = async (data: { name: string; }) => {
   const response = await api.post('/set', data);
   return response.data;
 };
-// /axiosobject/set/2
+
 //Fetch a specific set by ID
 export const fetchSetById = async (id: number) => {
   const response = await api.get(`/set/${id}`);
@@ -42,9 +45,13 @@ export const createCommentsBySetId = async (setId: number) => {
   const response = await api.post(`/set/${setId}/comments`);
   return response.data;
 };
+
+//
+// FLASHCARD SET CALLS
+//
 //Get flashcards by set ID
-export const fetchFlashcardSet = async(id: number)=>{
-  const response = await api.get(`/set/${id}/flashcard`);
+export const fetchFlashcardSet = async(setId: number)=>{
+  const response = await api.get(`/set/${setId}/flashcard`);
   return response.data;
 }
 
@@ -65,7 +72,9 @@ export const deleteFlashcardSet = async (id: number, flashcardId: number) => {
   return response.data;
 };
 
-
+//
+// USER CALLS
+//
 export const fetchUser = async () => {
   const response = await api.get(`/user`);  
   return response.data;
@@ -112,7 +121,9 @@ export const fetchSetsByUser = async (userId: number) => {
 };
 
 
-
+//
+// COLLECTIONS CALLS
+//
 // Get all flashcard set collections created by a user
 export const getFlashcardCollectionsByUser = async (userId: number, setId: number) => {
     try {

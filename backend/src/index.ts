@@ -5,10 +5,8 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express'
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
-//import { request } from 'http';
 import { PrismaClient } from  '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { error } from 'console';
 //Configures the environment variables.
 dotenv.config();
 import jwt from 'jsonwebtoken';
@@ -22,61 +20,11 @@ const app = express();
 const PORT = 3000;
 //Middleware to parse Json§
 app.use(express.json());
+app.use(cors()); 
 // Creating an instance of PrismaClient to interact with the database.
 const prisma = new PrismaClient();
-
-
 const SECRET_KEY = 'your_secret_key';
-app.use(cors()); 
 
-
-app.use((req: Request, res: Response, next: NextFunction) => {
-    console.log('Middleware executed');
-    next(); // Pass control to the next middleware
-});
-
-// ===========================
-// Middleware
-// ===========================
-//Custom middleware for validating request bodies
-
-const middleware = (req: Request, res: Response, next: NextFunction): void => {
-    try {
-        // If the required field `exampleField` is missing, return a 400 error.
-        if (!req.body.exampleField) {
-            res.status(400).json({ error: 'exampleField is required' });
-            return; // End the response cycle
-        }
-
-        //If validation passes, proceed to the next middleware
-        next();
-    } catch (error) {
-        console.error('Middleware error:', error);
-        res.status(500).json({ error: 'An internal server error occurred' });
-    }
-};
-
- const generateToken = (user: { 
-   username: string,  role: string  }): string => { 
-    return jwt.sign({  username: user.username, role: user.role}, SECRET_KEY, { expiresIn: '1h' }); }; 
-    
-    interface AuthenticatedRequest extends Request {
-       user?: {  username: string; role: string }; }
-       
-  const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => { 
-  const token = req.headers.authorization?.split(' ')[1];
- if (!token) { 
-   res.status(401).json({ error: 'Access denied, token missing!' }); 
-   return;
-  } 
-  try { 
-  const decoded = jwt.verify(token, SECRET_KEY) as { 
-    username: string, role: string }; req.user = decoded; 
-    next(); } 
-  catch (error) { 
-   res.status(401).json({ error: 'Invalid token' }); 
-  return;
-  } };
  
 // ===========================
 // ROUTES
@@ -87,16 +35,12 @@ app.get('/', (req: Request, res: Response) => {
     res.send('The active API version');
   });
 
-// Define the protected route with authMiddleware
-app.get('/protected', authMiddleware, async (req: Request & { user?: any }, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    res.status(200).json({ message: 'Access granted', user: req.user });
-  } catch (err) {
-    next(err);  // Pass any errors to the next error handler
-  }
+  //Server will return a clean JSON response instead of the html error
+app.all('*', (req: Request, res: Response) => {
+    res.status(404).json({ error: 'Route not found' });
 });
 
-
+//Login route
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   console.log(`Received login request: ${username}`);
@@ -194,29 +138,34 @@ app.post('/set', async (req: Request, res: Response) => {
   }
 });
 
+////Testing get request
+app.get('/set/test', (req, res) => {
+  res.status(200).send('Route is working');
+});
 
 
 // Get a specific set by ID
 app.get('/set/:id', async (req: Request, res: Response) => {
-  console.log('Route hit');
-  const { setId } = req.params;
-  
-  try {
-    const set = await prisma.set.findUnique({
-      where: { id: Number(setId) }
-    });
+ console.log('Route hit');
+ 
+const { id } = req.params;
+console.log(`Fetching set with ID: ${id}`);
+try {
+  const set = await prisma.set.findUnique({
+   where: { id: Number(id) }  });
 
-    if (!set) {
-      console.log('Set not found');
-       res.status(404).json({ error: 'Set not found' });
-       return;
-    }
-    console.log('Set found: ', set);
-    res.status(200).json(set);
-  } catch (error) {
-    console.error('Error fetching set:', error);
-    res.status(500).json({ error: 'Error fetching set' });
+ if (!set) {
+   console.log('Set not found');
+    res.status(404).json({ error: 'Set not found' });
     return;
+    }
+  console.log('Set found: ', set);
+  res.status(200).json(set);
+  } 
+catch (error) {
+  console.error('Error fetching set:', error);
+  res.status(500).json({ error: 'Error fetching set' });
+  return;
   }
 });
 
@@ -259,6 +208,13 @@ app.delete('/set/:id', async (req: Request, res: Response) => {
 // Get all flashcards in a specific set
 app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
   const { id } = req.params;
+ 
+  console.log('Received id:', id); // Log the received id to check
+  if (isNaN(Number(id))) {
+     res.status(400).json({ error: 'Invalid set ID' });
+     return;
+  }
+
 
   const { shuffle } = req.query;
   
@@ -307,6 +263,7 @@ app.post('/set/:id/flashcard', async (req: Request, res: Response) => {
     });
 
     res.status(201).json(newFlashcard);
+    console.log('Received set ID:', setId);
   } catch (error) {
     res.status(500).json({ error: 'Error creating flashcard' });
   }
@@ -354,7 +311,7 @@ app.delete('/set/:setId/flashcard/:flashcardId', async (req: Request, res: Respo
 //POST: Comment on a flashcard set, by the current user
 app.post('/set/:id/comments', async (req: Request, res: Response) => {
   const setId = Number(req.params.id);
-  const { rating, comments } = req.body; // Extract rating and comments
+  const { rating, comments, userId } = req.body; // Extract rating and comments
 
   //Ensuring that the comments field is not empty before accepting the request
   if (!comments || comments.trim() === '') {
@@ -380,6 +337,7 @@ app.post('/set/:id/comments', async (req: Request, res: Response) => {
     const comment = await prisma.comment.create({
       data: {
         setId,
+        userId,
         rating,
         comments,
       },
@@ -600,42 +558,48 @@ GET /user/:userID/set fetches all flashcard sets associated with a user.
 It first checks if the user exists and then retrieves 
 all the flashcard sets associated with that user.
 */
-app.get('/user/:userID/set', async (req: Request, res: Response) => {
-    const { userId } = req.params;
+
+app.get('/user/:userId/set', async (req: Request, res: Response) => {
+  const { userId } = req.params;
   
-    try {
-      const numericUserId = Number(userId);
-      if(isNaN(numericUserId)){
-        res.status(400).json({error: 'Invalid user ID'});
-        return;
-      }
-      // Find the user by ID
-      const user = await prisma.user.findUnique({
-        where: {
-          id: numericUserId, // Ensure userID is a number
-        },
-      });
-  
-      // If user is not found, return a 404 error
-      if (!user) {
-         res.status(404).json({ error: 'User not found' });
-      }
-  
-      // Retrieve all flashcard sets created by this user
-      const flashcardSets = await prisma.set.findMany({
-        where: {
-            // 'userId' is a foreign key in the flashcard set model
-          userId: numericUserId , 
-        },
-      });
-  
-      // Return the list of flashcard sets
-      res.status(200).json(flashcardSets);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'An error occurred while fetching the flashcard sets' });
+  console.log("Received userId:", userId); // Log the raw userId
+
+  try {
+    const numericUserId = Number(userId);
+    console.log("Converted userId to number:", numericUserId); // Log the converted userId
+    
+    if (isNaN(numericUserId)) {
+      res.status(400).json({ error: 'Invalid user ID' });
+      return;
     }
-  });
+
+    // Find the user by ID
+    const user = await prisma.user.findUnique({
+      where: {
+        id: numericUserId,
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Retrieve all flashcard sets created by this user
+    const flashcardSets = await prisma.set.findMany({
+      where: {
+        userId: numericUserId,
+      },
+    });
+
+    res.status(200).json(flashcardSets);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while fetching the flashcard sets' });
+  }
+});
+
+
 /*
 GET /user/:userId/collection fetches all collections created by a user.
 This route queries the collection table in the database for collections linked to the given userId.
@@ -732,44 +696,47 @@ app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Resp
 // Updates an existing collection by its id.
 //It allows updating the comments and setId.
 app.put('/collection/:id', async (req: Request, res: Response) => {
-    const collectionId = parseInt(req.params.id, 10);
-  const { comments, setId } = req.body;
-  
+  const collectionId = parseInt(req.params.id, 10);
+  const { title, userId, setId, comment } = req.body;
+
+  if (isNaN(collectionId)) {
+     res.status(400).json({ message: 'Invalid collection ID' });
+     return;
+    }
+
   try {
-    // Ensure collectionId is a valid number 
-    if (isNaN(collectionId)) { 
-       res.status(400).json({ message: 'Invalid collection ID' }); return; }
-    // Check if the collection exists
     const collection = await prisma.collection.findUnique({
       where: { id: collectionId },
     });
 
     if (!collection) {
        res.status(404).json({ message: 'Collection not found' });
-    }
+       return;
+      }
 
-    // Update the collection with the new comment and setId
     const updatedCollection = await prisma.collection.update({
-        where: { id: collectionId },
-        data: {
-          commentId: comments ? Number(comments) : undefined, 
-          setId: setId ? Number(setId) : undefined,
-        },
-        include: {
-          set: true,
-          user: true,
-        comments: true,
-        },
-      });
- // Respond with the updated collection details
-  res.status(200).json(updatedCollection);
+      where: { id: collectionId },
+      data: {
+        title: title, // Update title
+        userId: userId ? Number(userId) : undefined,
+        setId: setId ? Number(setId) : undefined,
+        comment: comment, 
+      },
+      include: {
+        set: true,
+        user: true,
+      },
+    });
 
-} catch (error) {
-  console.error(error);
-   res.status(500).json({ message: 'Internal Server Error' });
-   return;
-}
+     res.status(200).json(updatedCollection);
+     return;
+  } catch (error) {
+    console.error(error);
+     res.status(500).json({ message: 'Internal Server Error' });
+     return;
+    }
 });
+
    
 // DELETE endpoint to delete a flashcard set collection by ID
 app.delete('/collection/:id', async (req: Request, res: Response) => {
@@ -813,7 +780,7 @@ app.get('/collection', async (req: Request, res: Response) => {
         include: {
           set: true,     
           user: true,    
-          comments: true, 
+         
         },
       });
   
@@ -831,64 +798,52 @@ app.get('/collection', async (req: Request, res: Response) => {
 POST /collection creates a new collection.
 It stores a title, userId, and description in the collection table.
 */
-app.post('/collection', middleware, async (req: Request, res: Response) => {
-    const { comment, setID , userID} = req.body;
-  
-    // Ensure the necessary fields are provided
-    if (!comment || !setID || !userID) {
-       res.status(400).json({ message: 'Comment and setID are required' });
-       return;
-    }
-  
-    try {
-      // Check if the set exists
-      const flashcardSet = await prisma.set.findUnique({
-        where: { id: setID },
-      });
-  
-      if (!flashcardSet) {
-         res.status(404).json({ message: 'The flashcard set was not found' });
-         console.log(error);
-         return;
-      }
+app.post('/collection', async (req: Request, res: Response) => {
+  const { setId, userId, title, comment } = req.body;
 
-      let name :string | undefined = req.body?.name;
-      if(typeof name !== "string" || name.trim() === "")
-{
-    name = "";
-} 
-//Check if comment exists
- const existingComment = await prisma.comment.findFirst({
-  where: { id: comment},
- }) 
- if(!existingComment){
-  res.status(404).json({message: 'Comment not found'});
-  return;
- }
-      // Create the new collection
-      const newCollection = await prisma.collection.create({
-        data: {
-          commentId: comment ,
-           name: name,
-            setId: setID,
-            userId: userID, 
-        },
-        include: {
-          set: true,  
-          user: true, 
-        },
-      });
-  
-      // Return the created collection
-       res.status(201).json(newCollection);
-       return;
-  
-    } catch (error) {
-      console.error(error);
-       res.status(500).json({ message: 'Internal Server Error' });
+  // Ensure the necessary fields are provided
+  if (!setId || !userId || !title || comment) {
+     res.status(400).json({ message: 'setId, userId,comment and title are required' });
+     return;
+  }
+
+  try {
+    // Check if the flashcard set exists
+    const flashcardSet = await prisma.set.findUnique({
+      where: { id: setId },
+    });
+
+    if (!flashcardSet) {
+       res.status(404).json({ message: 'The flashcard set was not found' });
        return;
     }
-  });  
+
+    // Create the new collection
+    const newCollection = await prisma.collection.create({
+      data: {
+        title: title,    
+        comment: comment, 
+        setId: setId,
+        userId: userId,
+      },
+      include: {
+        set: true,
+        user: true,
+      },
+    });
+
+    // Return the created collection
+    res.status(201).json(newCollection);
+    return;
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+    return;
+  }
+});
+
+
 
  // GET /collections/random: Redirect to a random flashcard set collection.
 app.get('/collections/random', async (req: Request, res: Response) => {
@@ -929,24 +884,12 @@ app.post('/telemetry', async (req: Request, res: Response) => {
   }
 });
 
-// ===========================
-// Helper Functions
-// ===========================
-
-// Centralized Error Handler
-function handleError(res: Response, error: any, message: string) {
-  console.error(message, error);
-  res.status(500).json({ error: message });
-}
-
-
 
 // ===========================
 // Start the Server
 // ===========================
-  app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`); 
-
- });
-      
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  
+});
  export default app;

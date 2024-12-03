@@ -41,18 +41,22 @@ model User {
   sets     Set[]
   collections Collection[]
   telemetry   Telemetry[]
+  comments    Comment[]
  
 }
 
 model Collection {
   id      Int  @id @default(autoincrement())
-  name    String
+  title    String
+  comment  String
   userId  Int
   setId   Int
-  commentId Int
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
   user    User  @relation(fields: [userId], references: [id])
   set     Set   @relation(fields: [setId], references: [id])
-  comments Comment @relation(fields: [commentId], references: [id])
+ 
+  
 }
 
 
@@ -71,7 +75,9 @@ model Comment {
   comments   String?
   createdAt DateTime @default(now())
   setId    Int
+  userId   Int
   set      Set      @relation(fields: [setId], references: [id])
-  collection Collection[]
+  user    User  @relation(fields: [userId], references: [id])
+  
 }
 

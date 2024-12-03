@@ -1,48 +1,64 @@
-// src/pages/CollectionPage.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getAllFlashcardCollections, getFlashcardCollectionsByUser, deleteFlashcardCollection } from '../utils/api'; 
 
-const CollectionPage: React.FC = () => {
+const CollectionPage = () => {
+  const navigate = useNavigate();
   const [collections, setCollections] = useState<any[]>([]);
-  const [selectedSet, setSelectedSet] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { userId } = useParams(); // Assuming userId is passed as a URL param
 
-  // Add a set to the collection
-  const handleAddToCollection = () => {
-    if (!selectedSet) {
-      alert("Please select a set to add.");
-      return;
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        if (userId) {
+          const userCollections = await getFlashcardCollectionsByUser(Number(userId), 0); // setId can be provided if necessary
+          setCollections(userCollections);
+        } else {
+          const allCollections = await getAllFlashcardCollections();
+          setCollections(allCollections);
+        }
+        setLoading(false);
+      } catch (error) {
+        setLoading(false);
+        setError('Failed to load collections');
+      }
+    };
+
+    fetchCollections();
+  }, [userId]);
+
+  const handleDelete = async (collectionId: number) => {
+    try {
+      await deleteFlashcardCollection(collectionId);
+      setCollections((prev) => prev.filter((collection) => collection.id !== collectionId));
+    } catch (error) {
+      setError('Failed to delete collection');
     }
-    setCollections([...collections, selectedSet]);
-    setSelectedSet(""); // Reset the selection
   };
 
-  return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h2 className="text-3xl font-bold mb-4">Collections</h2>
-      
-      <div className="mb-6">
-        <input
-          type="text"
-          value={selectedSet}
-          onChange={(e) => setSelectedSet(e.target.value)}
-          placeholder="Enter set name"
-          className="p-2 border mb-4 w-full"
-        />
-        <button
-          onClick={handleAddToCollection}
-          className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-        >
-          Add to Collection
-        </button>
-      </div>
+  if (loading) return <div>Loading collections...</div>;
+  if (error) return <div>{error}</div>;
 
-      <h3 className="text-2xl font-semibold mb-4">My Collections</h3>
-      <ul>
-        {collections.map((collection, index) => (
-          <li key={index} className="border-b py-2">
-            {collection}
-          </li>
-        ))}
-      </ul>
+  return (
+    <div>
+      <h2>Flashcard Collections</h2>
+      <button onClick={() => navigate('/create-collection')}>Create New Collection</button>
+      <div className="collections-list">
+        {collections.length === 0 ? (
+          <p>No collections found.</p>
+        ) : (
+          collections.map((collection) => (
+            <div key={collection.id} className="collection-item">
+              <h3>{collection.name}</h3>
+              <p>{collection.comment}</p>
+              <button onClick={() => navigate(`/collection/${collection.id}`)}>View Collection</button>
+              <button onClick={() => handleDelete(collection.id)}>Delete</button>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };
