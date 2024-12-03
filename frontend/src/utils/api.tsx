@@ -3,6 +3,9 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000', // Backend URL
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 //Fetch all the flashcards sets
@@ -41,24 +44,24 @@ export const createCommentsBySetId = async (setId: number) => {
 };
 //Get flashcards by set ID
 export const fetchFlashcardSet = async(id: number)=>{
-  const response = await api.get('/set/:id/flashcard');
+  const response = await api.get(`/set/${id}/flashcard`);
   return response.data;
 }
 
 // Create a new flashcard
 export const createFlashcard = async (data: { setId: number; question: string; solution: string; difficulty: string; }) => {
-  const response = await api.post('set/:id/flashcard', data);
+  const response = await api.post(`set/${data.setId}/flashcard`, data);
   return response.data;
 };
 // Update flashcard set
-export const updateFlashcardSet = async (data: { setId: number; question: string; solution: string; difficulty: string; }) => {
-  const response = await api.put('/set/:setId/flashcard/:flashcardId', data);
+export const updateFlashcardSet = async (data: { setId: number; question: string; solution: string; difficulty: string; flashcardId: number; }) => {
+  const response = await api.put(`/set/${data.setId}/flashcard/${data.flashcardId}`, data);
   return response.data;
 };
 
 // Delete flashcard set
-export const deleteFlashcardSet = async (id: number) => {
-  const response = await api.delete(`/set/:setId/flashcard/:flashcardId`);
+export const deleteFlashcardSet = async (id: number, flashcardId: number) => {
+  const response = await api.delete(`/set/${id}/flashcard/${flashcardId}`);
   return response.data;
 };
 

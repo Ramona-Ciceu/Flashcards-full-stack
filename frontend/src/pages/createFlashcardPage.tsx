@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import {updateSet, deleteSet} from "../utils/api";
+import React, { useState, useEffect } from "react";
+import { updateSet, deleteSet, fetchSets, createSet, fetchFlashcardSet, createFlashcard } from "../utils/api";
 
 // Define interfaces
 interface Flashcard {
@@ -24,49 +24,63 @@ const FlashcardSetPage: React.FC = () => {
     solution: "",
     difficulty: "",
   });
-
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
-
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
 
-  const handleAddSet = () => {
+  // Fetch sets and flashcards when component mounts
+  useEffect(() => {
+    const getSets = async () => {
+      try {
+        const setsFromDb = await fetchSets();
+        setSets(setsFromDb);
+      } catch (error) {
+        console.error("Error fetching sets:", error);
+      }
+    };
+
+    getSets();
+  }, []);
+
+  const handleAddSet = async () => {
     if (!newSetName) {
       alert("Please provide a set name.");
       return;
     }
-    const newSet: Sets = { id: sets.length + 1, name: newSetName };
-    setSets([...sets, newSet]);
-    setNewSetName("");
+    try {
+      const newSet = await createSet({ name: newSetName });
+      setSets([...sets, newSet]);
+      setNewSetName(""); // Reset the input
+    } catch (error) {
+      alert("Error adding set.");
+    }
   };
 
-  const handleAddFlashcard = () => {
+  const handleAddFlashcard = async () => {
     if (!selectedSetId || !newFlashcard.question || !newFlashcard.solution || !newFlashcard.difficulty) {
       alert("Please complete all fields.");
       return;
     }
 
-    const newCard: Flashcard = {
-      setId: selectedSetId,
-      question: newFlashcard.question,
-      solution: newFlashcard.solution,
-      difficulty: newFlashcard.difficulty,
-    };
-    setFlashcards([...flashcards, newCard]);
-    setNewFlashcard({ setId: 0, question: "", solution: "", difficulty: "" });
+    try {
+      const newCard = await createFlashcard(newFlashcard);
+      setFlashcards([...flashcards, newCard]);
+      setNewFlashcard({ setId: 0, question: "", solution: "", difficulty: "" });
+    } catch (error) {
+      alert("Error adding flashcard.");
+    }
   };
 
   const handleSelectSet = (setId: number) => {
     setSelectedSetId(setId);
-  };
-
-  const handleFlipCard = (index: number) => {
-    const updatedFlippedCards = new Set(flippedCards);
-    if (updatedFlippedCards.has(index)) {
-      updatedFlippedCards.delete(index);
-    } else {
-      updatedFlippedCards.add(index);
-    }
-    setFlippedCards(updatedFlippedCards);
+    const fetchCards = async () => {
+      try {
+        const cardsFromDb = await fetchFlashcardSet(setId);
+        setFlashcards(cardsFromDb);
+      } catch (error) {
+        console.error("Error fetching flashcards:", error);
+      }
+    };
+    fetchCards();
   };
 
   const handleEditSet = async (setId: number, newName: string) => {
@@ -78,16 +92,28 @@ const FlashcardSetPage: React.FC = () => {
       alert("Error updating set.");
     }
   };
-  
-  // Delete Set Handler
+
   const handleDeleteSet = async (setId: number) => {
     try {
       await deleteSet(setId);
-      setSets(sets.filter((set) => set.id !== setId)); // Remove the deleted set from the state
-      setFlashcards(flashcards.filter((card) => card.setId !== setId)); // Remove related flashcards
+      setSets(sets.filter((set) => set.id !== setId));
+      setFlashcards(flashcards.filter((card) => card.setId !== setId));
     } catch (error) {
       alert("Error deleting set.");
     }
+  };
+
+  // Function to handle card flip
+  const handleFlipCard = (index: number) => {
+    setFlippedCards((prev) => {
+      const updatedFlippedCards = new Set(prev);
+      if (updatedFlippedCards.has(index)) {
+        updatedFlippedCards.delete(index); // Remove card from flipped set
+      } else {
+        updatedFlippedCards.add(index); // Add card to flipped set
+      }
+      return updatedFlippedCards;
+    });
   };
 
   return (
@@ -110,17 +136,18 @@ const FlashcardSetPage: React.FC = () => {
       <div>
         <h3>Select a Set to Add Flashcards:</h3>
         <select
-          value={selectedSetId || ""}
-          onChange={(e) => handleSelectSet(Number(e.target.value))}
-          className="p-2 border mb-4 w-full"
-        >
-          <option value="">-- Select a Set --</option>
-          {sets.map((set) => (
-            <option key={set.id} value={set.id}>
-              {set.name}
-            </option>
-          ))}
-        </select>
+  value={selectedSetId || ""}
+  onChange={(e) => handleSelectSet(Number(e.target.value))}
+  className="p-2 border mb-4 w-full"
+>
+  <option value="">-- Select a Set --</option>
+  {sets.map((set) => (
+    <option key={set.id} value={set.id}>
+      {set.name}
+    </option>
+  ))}
+</select>
+
       </div>
 
       {/* Create Flashcard Section */}
@@ -164,16 +191,13 @@ const FlashcardSetPage: React.FC = () => {
           <div key={set.id}>
             {set.id === selectedSetId && (
               <div>
-                
                 <h3>{set.name} Flashcards:</h3>
                 {flashcards
                   .filter((card) => card.setId === set.id)
                   .map((card, index) => (
                     <div
                       key={index}
-                      className={`p-4 mb-4 rounded-lg shadow-lg cursor-pointer transform transition-transform ${
-                        flippedCards.has(index) ? "rotate-y-180" : "rotate-y-0"
-                      }`}
+                      className={`p-4 mb-4 rounded-lg shadow-lg cursor-pointer transform transition-transform ${flippedCards.has(index) ? "rotate-y-180" : "rotate-y-0"}`}
                       onClick={() => handleFlipCard(index)}
                     >
                       <div className="flex justify-between">
@@ -184,7 +208,6 @@ const FlashcardSetPage: React.FC = () => {
                         <div className="mt-4">
                           <strong>Solution:</strong> {card.solution}
                         </div>
-                        
                       )}
                     </div>
                   ))}

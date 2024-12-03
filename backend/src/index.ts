@@ -193,19 +193,17 @@ app.post('/set', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Error creating set' });
   }
 });
-app.get('/test', (req: Request, res: Response) => {
-  res.status(200).json({ message: 'Test route working' });
-});
+
 
 
 // Get a specific set by ID
 app.get('/set/:id', async (req: Request, res: Response) => {
   console.log('Route hit');
-  const { id } = req.params;
+  const { setId } = req.params;
   
   try {
     const set = await prisma.set.findUnique({
-      where: { id: Number(id) }
+      where: { id: Number(setId) }
     });
 
     if (!set) {
@@ -288,7 +286,8 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
 
 // Create a flashcard in a specific set
 app.post('/set/:id/flashcard', async (req: Request, res: Response) => {
-  const { setId, question, solution, difficulty } = req.body;
+  const {  question, solution, difficulty } = req.body;
+  const {id: setId} = req.params;
 
   try {
     const set = await prisma.set.findUnique({ where: { id: Number(setId) } });
@@ -354,38 +353,50 @@ app.delete('/set/:setId/flashcard/:flashcardId', async (req: Request, res: Respo
 // ===========================
 //POST: Comment on a flashcard set, by the current user
 app.post('/set/:id/comments', async (req: Request, res: Response) => {
-    const { id } = req.params; 
-    //Extract comment details
-    const { userId, rating, comments } = req.body; 
-  
-    // Validate that rating is between 1 and 5
-     if (rating === undefined || rating < 1 || rating > 5) {
-        res.status(400).json({ error: 'Rating must be between 1 and 5' });
-      return; }
-    try {
-    
-      //Create a comment in the database
-      const comm = await prisma.comment.create({
-        data: {
-          setId: Number(id),
-          userId,
-          rating,
-          comments
-        
-        },
-      });
-  
-      res.status(201).json(comm);
-      console.log('Comment created');
-    } catch (error) {
-      console.error(error);
-      if(error instanceof Error && error.message.includes('P2025')){ res.status(404).json({ error: 'The flashcard set was not found' });
-    }
-    res.status(500).json({error: 'Internal server error'});
+  const setId = Number(req.params.id);
+  const { rating, comments } = req.body; // Extract rating and comments
+
+  //Ensuring that the comments field is not empty before accepting the request
+  if (!comments || comments.trim() === '') {
+    res.status(400).json({ error: 'Comment text cannot be empty' });
     return;
   }
-  });
- 
+  
+  // Validate input
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    res.status(400).json({ error: 'Rating must be an integer between 1 and 5' });
+    return;
+  }
+  
+
+  try {
+    // Ensure id is a valid number
+    if (isNaN(setId)) {
+       res.status(400).json({ error: 'Invalid setId' });
+      return;
+    }
+
+    // Create a comment in the database
+    const comment = await prisma.comment.create({
+      data: {
+        setId,
+        rating,
+        comments,
+      },
+    });
+
+    res.status(201).json(comment);
+    console.log('Comment created');
+  } catch (error) {
+    console.error(error);
+    if (error instanceof Error && error.message.includes('P2025')) {
+       res.status(404).json({ error: 'The flashcard set was not found' });
+       return;
+      }
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 // ===========================
 // User Routes
@@ -408,7 +419,12 @@ app.get('/user', async (req: Request, res: Response) => {
 
     }
 });
-
+/*
+validateUserInput checks if required fields (username, password, role) are present in the request body.
+It also validates that the role is either 'admin' or 'user'.
+If validation fails, it sends a 400 status code with an error message, 
+otherwise, it calls next() to proceed to the next middleware or route handler.
+*/
 // Middleware for validating user input
 const validateUserInput = (req: Request, res: Response, next: NextFunction): void => {
     const { username, password, role } = req.body;
@@ -427,6 +443,12 @@ const validateUserInput = (req: Request, res: Response, next: NextFunction): voi
 //This moves to the next middleware/handler if validation passes
     next(); 
 };
+/*
+hashPassword is a middleware that hashes the user's password 
+using bcrypt before saving it to the database.
+It takes the password from the request body, hashes it with 10 salt rounds, 
+and replaces the plaintext password with the hashed one.
+*/
 // Middleware for hashing passwords
 const hashPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -441,7 +463,13 @@ const hashPassword = async (req: Request, res: Response, next: NextFunction) => 
         res.status(500).json({ error: 'An error occurred while processing the password.' });
     }
 };
-
+/*
+POST /user creates a new user after validating input and hashing the password.
+prisma.user.create() creates a new user record in the database
+ with the provided username, password (hashed), and role.
+On success, it returns the created user data with a 201 status code.
+On failure, it logs the error and returns a 400 status with an error message.
+*/
 // Route to create a new user
 app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Response) => {
     const { username, password,  role, } = req.body;
@@ -464,7 +492,11 @@ app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Resp
         return;
     }
 });
-
+/*
+GET /user/:id fetches a user by their ID.
+prisma.user.findUnique() is used to find a single user based on the unique id.
+If the user is found, it returns the user data, otherwise, it sends a 404 error.
+*/
 //Get a user by ID
 app.get('/user/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -483,8 +515,11 @@ app.get('/user/:id', async (req: Request, res: Response) => {
 
     }
 });
-
-// Update user by ID
+/*
+PUT /user/:id updates a user's details by their ID.
+First, it checks if the user exists. Then, it hashes the password if it's provided.
+The user is updated using prisma.user.update(). It returns the updated user data.
+*/
 app.put('/user/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { username, password, role } = req.body;
@@ -541,10 +576,11 @@ app.put('/user/:id', async (req: Request, res: Response) => {
       res.status(500).json({ error: 'An error occurred while updating the user.' });
   }
 });
-
-
-
-  // DELETE an user by ID
+/*
+DELETE /user/:id deletes a user by their ID.
+prisma.user.delete() is used to remove the user from the database.
+If the user is deleted successfully, it sends a 204 status code (no content). If the user doesn't exist, it sends a 404 error.
+*/
 app.delete('/user/:id', async (req: Request, res: Response) => {
     const { userId } = req.params;
   
@@ -559,8 +595,11 @@ app.delete('/user/:id', async (req: Request, res: Response) => {
       res.status(404).json({ error: 'The user was not found' });
     }
   });
-
-// Get all flashcard sets created by a user
+/*
+GET /user/:userID/set fetches all flashcard sets associated with a user.
+It first checks if the user exists and then retrieves 
+all the flashcard sets associated with that user.
+*/
 app.get('/user/:userID/set', async (req: Request, res: Response) => {
     const { userId } = req.params;
   
@@ -597,8 +636,10 @@ app.get('/user/:userID/set', async (req: Request, res: Response) => {
       res.status(500).json({ error: 'An error occurred while fetching the flashcard sets' });
     }
   });
-
-//Get all flashcards set collections created by a user
+/*
+GET /user/:userId/collection fetches all collections created by a user.
+This route queries the collection table in the database for collections linked to the given userId.
+*/
 app.get('/user/:userId/collection', async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { setId} = req.query;
@@ -646,7 +687,8 @@ app.get('/user/:userId/collection', async (req: Request, res: Response) => {
     }
   });
 
-///Get a flachcard set collection by ID
+//Fetches a specific flashcard collection by its userId and collectionId. 
+//The route ensures the userId and collectionId are valid numbers.
 app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Response) => {
     const { userId, collectionId } = req.params;
 
@@ -687,7 +729,8 @@ app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Resp
     }
 });
 
-// UPDATE a flashcard set collection by id
+// Updates an existing collection by its id.
+//It allows updating the comments and setId.
 app.put('/collection/:id', async (req: Request, res: Response) => {
     const collectionId = parseInt(req.params.id, 10);
   const { comments, setId } = req.body;
@@ -763,7 +806,6 @@ app.delete('/collection/:id', async (req: Request, res: Response) => {
     }
   });
 
-  // GET endpoint to retrieve all flashcard set collections
 app.get('/collection', async (req: Request, res: Response) => {
     try {
       // Retrieve all collections with associated set, user, and comment
@@ -785,13 +827,15 @@ app.get('/collection', async (req: Request, res: Response) => {
        return;
     }
   });
-
-// POST endpoint to create a new flashcard set collection
+/*
+POST /collection creates a new collection.
+It stores a title, userId, and description in the collection table.
+*/
 app.post('/collection', middleware, async (req: Request, res: Response) => {
     const { comment, setID , userID} = req.body;
   
     // Ensure the necessary fields are provided
-    if (!comment || !setID) {
+    if (!comment || !setID || !userID) {
        res.status(400).json({ message: 'Comment and setID are required' });
        return;
     }
@@ -805,13 +849,22 @@ app.post('/collection', middleware, async (req: Request, res: Response) => {
       if (!flashcardSet) {
          res.status(404).json({ message: 'The flashcard set was not found' });
          console.log(error);
+         return;
       }
 
       let name :string | undefined = req.body?.name;
       if(typeof name !== "string" || name.trim() === "")
 {
     name = "";
-}  
+} 
+//Check if comment exists
+ const existingComment = await prisma.comment.findFirst({
+  where: { id: comment},
+ }) 
+ if(!existingComment){
+  res.status(404).json({message: 'Comment not found'});
+  return;
+ }
       // Create the new collection
       const newCollection = await prisma.collection.create({
         data: {
@@ -849,7 +902,9 @@ app.get('/collections/random', async (req: Request, res: Response) => {
   }
 });
 
-// POST /telemetry: Creates a new telemetry entry.
+
+// POST /telemetry: creates a new telemetry entry that records user activity, 
+//storing the userId, activity, and timestamp in the telemetry table.
 app.post('/telemetry', async (req: Request, res: Response) => {
   const { eventType, userId, additionalInfo } = req.body;
 

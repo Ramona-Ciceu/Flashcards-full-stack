@@ -41,7 +41,7 @@ model User {
   sets     Set[]
   collections Collection[]
   telemetry   Telemetry[]
-  comments     Comment[]
+ 
 }
 
 model Collection {
@@ -70,9 +70,7 @@ model Comment {
   rating    Int      
   comments   String?
   createdAt DateTime @default(now())
-  userId   Int
   setId    Int
-  user     User     @relation(fields: [userId], references: [id])
   set      Set      @relation(fields: [setId], references: [id])
   collection Collection[]
 }
