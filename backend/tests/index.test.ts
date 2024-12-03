@@ -7,6 +7,7 @@ import app from '../src/index';
 import { describe, it, beforeAll, afterAll, expect } from '@jest/globals';
 
 const prisma = new PrismaClient();
+jest.mock('@prisma/client');
 
 describe('Set API Routes', () => {
 
@@ -149,7 +150,7 @@ describe('GET /set/:id/flashcard', () => {
   });
 });
 
-describe('POST /flashcards', () => {
+describe('POST /set/:id/flashcard', () => {
   it('should create a flashcard', async () => {
     const flashcardData = {
       setId: 1, // Assuming a set with ID 1 exists
@@ -158,7 +159,7 @@ describe('POST /flashcards', () => {
       difficulty: 'easy',
     };
 
-    const response = await request(app).post('/flashcards').send(flashcardData);
+    const response = await request(app).post('/set/:id/flashcard').send(flashcardData);
 
     expect(response.status).toBe(201);
     expect(response.body.question).toBe(flashcardData.question);
@@ -173,7 +174,7 @@ describe('POST /flashcards', () => {
       difficulty: 'unknown',  // Invalid difficulty
     };
 
-    const response = await request(app).post('/flashcards').send(flashcardData);
+    const response = await request(app).post('/set/:id/flashcard').send(flashcardData);
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid difficulty. Valid values are "easy", "medium", "hard".');
@@ -187,7 +188,7 @@ describe('POST /flashcards', () => {
       difficulty: 'easy',
     };
 
-    const response = await request(app).post('/flashcards').send(flashcardData);
+    const response = await request(app).post('/set/:id/flashcard').send(flashcardData);
 
     expect(response.status).toBe(404);
     expect(response.body.error).toBe('Set not found');
@@ -220,10 +221,65 @@ describe('User API Routes', () => {
   });
 
   // Test POST create a user
-  
-  
+  describe('POST /user', () => {
+    const mockUser = {
+        username: 'testuser',
+        password: 'securepassword',
+        role: 'user',
+    };
 
+    afterEach(() => {
+        jest.clearAllMocks(); // Clear mocks after each test
+    });
+
+    it('should create a user successfully when valid input is provided', async () => {
+        // Mock Prisma user creation
+        (prisma.user.create as jest.Mock).mockResolvedValue({
+            id: 1,
+            ...mockUser,
+        });
+
+        const response = await request(app)
+            .post('/user')
+            .send(mockUser)
+            .set('Content-Type', 'application/json');
+
+        expect(response.status).toBe(201);
+        expect(response.body).toEqual(expect.objectContaining(mockUser));
+        expect(prisma.user.create).toHaveBeenCalledWith({
+            data: mockUser,
+        });
+    });
+
+    it('should return 400 if the user cannot be created', async () => {
+        // Mock Prisma throwing an error
+        (prisma.user.create as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+        const response = await request(app)
+            .post('/user')
+            .send(mockUser)
+            .set('Content-Type', 'application/json');
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({
+            error: 'The user could not be created.',
+        });
+    });
+
+    it('should return 400 if required fields are missing', async () => {
+        const invalidUser = { username: 'testuser' }; // Missing password and role
+
+        const response = await request(app)
+            .post('/user')
+            .send(invalidUser)
+            .set('Content-Type', 'application/json');
+
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty('error');
+    });
 });
+});
+
 
   
 

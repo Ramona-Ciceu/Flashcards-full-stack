@@ -22,6 +22,7 @@ npm install react-router-dom
 
 npm install axios
 
+npm install --save-dev @types/jest
 
 
 

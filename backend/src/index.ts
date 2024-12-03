@@ -32,13 +32,17 @@ const SECRET_KEY = 'your_secret_key';
 
 //Checking health enpoints
 app.get('/', (req: Request, res: Response) => {
-    res.send('The active API version');
-  });
-
-  //Server will return a clean JSON response instead of the html error
-app.all('*', (req: Request, res: Response) => {
-    res.status(404).json({ error: 'Route not found' });
+  console.log('Root route hit');
+  res.status(200).send('Server is working');
 });
+
+ // Log incoming requests for debugging
+app.use((req: Request, res:Response, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
+
 
 //Login route
 app.post('/login', async (req, res) => {
@@ -136,11 +140,6 @@ app.post('/set', async (req: Request, res: Response) => {
     console.error('Error creating set:', error);
     res.status(500).json({ error: 'Error creating set' });
   }
-});
-
-////Testing get request
-app.get('/set/test', (req, res) => {
-  res.status(200).send('Route is working');
 });
 
 
@@ -798,7 +797,9 @@ app.get('/collection', async (req: Request, res: Response) => {
 POST /collection creates a new collection.
 It stores a title, userId, and description in the collection table.
 */
+
 app.post('/collection', async (req: Request, res: Response) => {
+  console.log('Collection route hit');
   const { setId, userId, title, comment } = req.body;
 
   // Ensure the necessary fields are provided
@@ -821,10 +822,10 @@ app.post('/collection', async (req: Request, res: Response) => {
     // Create the new collection
     const newCollection = await prisma.collection.create({
       data: {
-        title: title,    
-        comment: comment, 
-        setId: setId,
-        userId: userId,
+        title,    
+        comment, 
+        setId,
+        userId,
       },
       include: {
         set: true,
@@ -842,6 +843,7 @@ app.post('/collection', async (req: Request, res: Response) => {
     return;
   }
 });
+
 
  // GET /collections/random: Redirect to a random flashcard set collection.
 app.get('/collections/random', async (req: Request, res: Response) => {

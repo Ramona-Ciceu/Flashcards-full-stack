@@ -5,10 +5,11 @@
     "moduleResolution": "node",
     "target": "ESNext",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "strict": true,
     "jsx": "react"
   },
-  "include": ["src" ]
+  "include": ["src", "tests/**/*" ]
 }
