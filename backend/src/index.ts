@@ -843,8 +843,6 @@ app.post('/collection', async (req: Request, res: Response) => {
   }
 });
 
-
-
  // GET /collections/random: Redirect to a random flashcard set collection.
 app.get('/collections/random', async (req: Request, res: Response) => {
   try {

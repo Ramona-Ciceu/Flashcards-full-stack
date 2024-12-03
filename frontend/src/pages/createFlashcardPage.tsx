@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { updateSet, deleteSet, fetchSets, createSet, fetchFlashcardSet, createFlashcard } from "../utils/api";
+import { Flashcard, Sets} from "../Types/type";
 
-// Define interfaces
-interface Flashcard {
-  setId: number;
-  question: string;
-  solution: string;
-  difficulty: string;
-}
 
-interface Sets {
-  id: number;
-  name: string;
-}
 
 const FlashcardSetPage: React.FC = () => {
   const [sets, setSets] = useState<Sets[]>([]);
