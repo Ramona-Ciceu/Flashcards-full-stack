@@ -1,5 +1,6 @@
 //frontend/src/utils/api.tsx
 import axios from 'axios';
+import { Flashcard, Sets} from "../Types/type";
 
 const api = axios.create({
   baseURL: 'http://localhost:3000', // Backend URL
@@ -13,13 +14,19 @@ const api = axios.create({
 //
 //Fetch all the flashcards sets
 export const fetchSets = async () => {
-  const response = await api.get(`/set`);
-  return response.data;
+  const response = await fetch("/api/sets");
+  if (!response.ok) throw new Error("Failed to fetch sets");
+  return response.json();
 };
 //Create a new flashcard set
-export const createSet = async (data: { name: string; }) => {
-  const response = await api.post('/set', data);
-  return response.data;
+export const createSet = async (set: { name: string }) => {
+  const response = await fetch("/api/sets", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(set),
+  });
+  if (!response.ok) throw new Error("Failed to create set");
+  return response.json();
 };
 
 //Fetch a specific set by ID
@@ -29,15 +36,20 @@ export const fetchSetById = async (id: number) => {
 };
 
 // Update an existing flashcard set by ID
-export const updateSet = async (id: number, data: { name: string; description: string }) => {
-  const response = await api.put(`/set/${id}`, data);
-  return response.data;
+export const updateSet = async (setId: number, updates: { name: string; description: string }) => {
+  const response = await fetch(`/api/sets/${setId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (!response.ok) throw new Error("Failed to update set");
+  return response.json();
 };
 
 // Delete a flashcard set by ID
-export const deleteSet = async (id: number) => {
-  const response = await api.delete(`/set/${id}`);
-  return response.data;
+export const deleteSet = async (setId: number) => {
+  const response = await fetch(`/api/sets/${setId}`, { method: "DELETE" });
+  if (!response.ok) throw new Error("Failed to delete set");
 };
 
 // Example: Create comments for a specific set
@@ -50,15 +62,21 @@ export const createCommentsBySetId = async (setId: number) => {
 // FLASHCARD SET CALLS
 //
 //Get flashcards by set ID
-export const fetchFlashcardSet = async(setId: number)=>{
-  const response = await api.get(`/set/${setId}/flashcard`);
-  return response.data;
-}
+export const fetchFlashcardSet = async (setId: number) => {
+  const response = await fetch(`/api/sets/${setId}/flashcards`);
+  if (!response.ok) throw new Error("Failed to fetch flashcards");
+  return response.json();
+};
 
 // Create a new flashcard
-export const createFlashcard = async (data: { setId: number; question: string; solution: string; difficulty: string; }) => {
-  const response = await api.post(`set/${data.setId}/flashcard`, data);
-  return response.data;
+export const createFlashcard = async (flashcard: Flashcard) => {
+  const response = await fetch(`/api/flashcards`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(flashcard),
+  });
+  if (!response.ok) throw new Error("Failed to create flashcard");
+  return response.json();
 };
 // Update flashcard set
 export const updateFlashcardSet = async (data: { setId: number; question: string; solution: string; difficulty: string; flashcardId: number; }) => {

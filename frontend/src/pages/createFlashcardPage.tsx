@@ -8,7 +8,7 @@ const FlashcardSetPage: React.FC = () => {
   const [sets, setSets] = useState<Sets[]>([]);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [newSetName, setNewSetName] = useState("");
-  const [newFlashcard, setNewFlashcard] = useState<Flashcard>({
+  const [newFlashcard, setNewFlashcard] = useState<Flashcard>({id:0,
     setId: 0,
     question: "",
     solution: "",
@@ -54,7 +54,7 @@ const FlashcardSetPage: React.FC = () => {
     try {
       const newCard = await createFlashcard(newFlashcard);
       setFlashcards([...flashcards, newCard]);
-      setNewFlashcard({ setId: 0, question: "", solution: "", difficulty: "" });
+      setNewFlashcard({id:0, setId: 0, question: "", solution: "", difficulty: "" });
     } catch (error) {
       alert("Error adding flashcard.");
     }
