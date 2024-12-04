@@ -11,7 +11,7 @@ describe('API Calls', () => {
     jest.clearAllMocks();  // Clear mocks after each test
   });
 
-  it('should fetch all sets', async () => {
+  test('should fetch all sets', async () => {
     const mockResponse = [
       { id: 1, name: 'Flashcards Set 1' },
       { id: 2, name: 'Flashcards Set 2' },
@@ -28,9 +28,9 @@ describe('API Calls', () => {
     expect(axios.get).toHaveBeenCalledWith('/set');
   });
 
-  it('should create a new set', async () => {
-    const newSet = { name: 'New Set' };
-    const mockResponse = { id: 3, name: 'New Set' };
+  test('should create a new set', async () => {
+    const newSet = { name: 'New Set', userId: '3' };
+    const mockResponse = { id: 3, name: 'New Set', userId:3 };
 
     // Mock the axios POST request
     (axios.post as jest.Mock).mockResolvedValue({ data: mockResponse });
@@ -43,7 +43,7 @@ describe('API Calls', () => {
     expect(axios.post).toHaveBeenCalledWith('/set', newSet);
   });
 
-  it('should fetch a specific set by ID', async () => {
+  test('should fetch a specific set by ID', async () => {
     const mockData = { id: 1, name: 'Flashcards Set 1' };
 
     // Mock the axios GET request
@@ -57,7 +57,7 @@ describe('API Calls', () => {
     expect(axios.get).toHaveBeenCalledWith('/set/1');
   });
 
-  it('should update an existing set', async () => {
+  test('should update an existing set', async () => {
     const updatedData = { name: 'Updated Set', description: 'New description' };
     const mockResponse = { id: 1, name: 'Updated Set', description: 'New description' };
 
@@ -72,7 +72,7 @@ describe('API Calls', () => {
     expect(axios.put).toHaveBeenCalledWith('/set/1', updatedData);
   });
 
-  it('should delete a set', async () => {
+  test('should delete a set', async () => {
     const mockResponse = { message: 'Deleted successfully' };
 
     // Mock the axios DELETE request
