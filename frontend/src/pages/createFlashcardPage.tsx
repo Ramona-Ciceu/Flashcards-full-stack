@@ -92,13 +92,15 @@ const FlashcardSetPage: React.FC = () => {
   };
 
   const handleFlipCard = (index: number) => {
-    const updatedFlippedCards = new Set(flippedCards);
-    if (updatedFlippedCards.has(index)) {
-      updatedFlippedCards.delete(index);
-    } else {
-      updatedFlippedCards.add(index);
-    }
-    setFlippedCards(updatedFlippedCards);
+    setFlippedCards((prevFlipped) => {
+      const newFlipped = new Set(prevFlipped);
+      if (newFlipped.has(index)) {
+        newFlipped.delete(index); // Hide the answer
+      } else {
+        newFlipped.add(index); // Reveal the answer
+      }
+      return newFlipped;
+    });
   };
 
   const handleEditSet = async (setId: number, newName: string) => {
@@ -197,8 +199,9 @@ const FlashcardSetPage: React.FC = () => {
           <div key={set.id}>
             {set.id === selectedSetId && (
               <div>
-                <h3>{set.name} Flashcards:</h3>
-                <br></br>
+                <h2 font-bold>{set.name} Flashcards:</h2>
+                <h3></h3>
+
                 <button
                   onClick={() => handleEditSet(set.id, set.name)}
                   className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-green-600"
@@ -213,11 +216,11 @@ const FlashcardSetPage: React.FC = () => {
                   </button>
                 {flashcards
                   .filter((card) => card.setId === set.id)
-                  .map((card, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 mb-4 rounded-lg shadow-lg transform transition-transform`}
-                    >
+                  .map((card) => (
+                   <div
+                   key={card.setId}
+                   className="p-4 mb-4 rounded-lg transform transition-transform"
+                   >
                       <div className="flex justify-between">
                         <div>
                           <strong>Question:</strong> {card.question}
@@ -226,28 +229,41 @@ const FlashcardSetPage: React.FC = () => {
                           <strong>Difficulty:</strong> {card.difficulty}
                         </div>
                       </div>
-                      <div className="mt-4">
-                        <strong>Solution:</strong> {card.solution}
-                      </div>
                       <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => handleEditSet(set.id, set.name)}
-                          className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-blue-600"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSet(set.id)}
-                          className="p-2 bg-red-500 text-white rounded-lg hover:bg-blue-600"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
+    
+        
+                      {flippedCards.has(card.setId) && (
+                  <div className="mt-4 text-green-700">
+                    <strong>Solution:</strong> {card.solution}
+                  </div>
+                )}
+</div>
+             {/* Add the Flip Card button here */}
+                <button
+                  onClick={() => handleFlipCard(card.setId)}
+                  className="mt-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-green-500"
+                >
+                  Show Solution
+                </button>
+                <button
+        onClick={() => handleEditSet(set.id, set.name)}
+         className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-blue-600"
+          >
+        Edit
+        </button>
+        <button
+        onClick={() => handleDeleteSet(set.id)}
+         className="p-2 bg-red-500 text-white rounded-lg hover:bg-blue-600"
+         >
+         Delete
+         </button>
+         </div>
+         
+            ))}
+       
+   </div>
+      )}
+     </div>
         ))}
       </div>
     </div>
