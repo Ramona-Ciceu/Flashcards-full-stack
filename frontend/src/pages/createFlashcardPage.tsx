@@ -232,13 +232,13 @@ const FlashcardSetPage: React.FC = () => {
                       <div className="flex gap-2 mt-4">
                         <button
                           onClick={() => handleEditSet(set.id, set.name)}
-                          className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                          className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-blue-600"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDeleteSet(set.id)}
-                          className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                          className="p-2 bg-red-500 text-white rounded-lg hover:bg-blue-600"
                         >
                           Delete
                         </button>
