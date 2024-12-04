@@ -13,7 +13,7 @@ const CollectionPage = () => {
     const fetchCollections = async () => {
       try {
         if (userId) {
-          const userCollections = await getFlashcardCollectionsByUser(Number(userId), 0); // setId can be provided if necessary
+          const userCollections = await getFlashcardCollectionsByUser(Number(userId), 0); 
           setCollections(userCollections);
         } else {
           const allCollections = await getAllFlashcardCollections();

@@ -137,7 +137,7 @@ const FlashcardSetPage: React.FC = () => {
           Create Set
         </button>
       </div>
-
+  
       {/* Flashcard Set Selection */}
       <div>
         <h3>Select a Set to Add Flashcards:</h3>
@@ -155,7 +155,7 @@ const FlashcardSetPage: React.FC = () => {
           ))}
         </select>
       </div>
-
+  
       {/* Create Flashcard Section */}
       <div>
         {selectedSetId && (
@@ -190,35 +190,59 @@ const FlashcardSetPage: React.FC = () => {
           </div>
         )}
       </div>
-
+  
       {/* Display Flashcards for the Selected Set */}
       <div>
         {sets.map((set) => (
           <div key={set.id}>
             {set.id === selectedSetId && (
               <div>
-                
                 <h3>{set.name} Flashcards:</h3>
+                <br></br>
+                <button
+                  onClick={() => handleEditSet(set.id, set.name)}
+                  className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-green-600"
+                  >
+                Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteSet(set.id)}
+                  className="p-2 bg-red-500 text-white rounded-lg hover:bg-green-600"
+                   > 
+                   Delete
+                  </button>
                 {flashcards
                   .filter((card) => card.setId === set.id)
                   .map((card, index) => (
                     <div
                       key={index}
-                      className={`p-4 mb-4 rounded-lg shadow-lg cursor-pointer transform transition-transform ${
-                        flippedCards.has(index) ? "rotate-y-180" : "rotate-y-0"
-                      }`}
-                      onClick={() => handleFlipCard(index)}
+                      className={`p-4 mb-4 rounded-lg shadow-lg transform transition-transform`}
                     >
                       <div className="flex justify-between">
-                        <div><strong>Question:</strong> {card.question}</div>
-                        <div><strong>Difficulty:</strong> {card.difficulty}</div>
-                      </div>
-                      {flippedCards.has(index) && (
-                        <div className="mt-4">
-                          <strong>Solution:</strong> {card.solution}
+                        <div>
+                          <strong>Question:</strong> {card.question}
                         </div>
-                        
-                      )}
+                        <div>
+                          <strong>Difficulty:</strong> {card.difficulty}
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <strong>Solution:</strong> {card.solution}
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => handleEditSet(set.id, set.name)}
+                          className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSet(set.id)}
+                          className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
               </div>
@@ -228,6 +252,6 @@ const FlashcardSetPage: React.FC = () => {
       </div>
     </div>
   );
-};
-
+}
+  
 export default FlashcardSetPage;  

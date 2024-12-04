@@ -33,7 +33,7 @@ export const fetchSetById = async (id: number) => {
 
 // Update an existing flashcard set by ID
 export const updateSet = async (id: number, updates: { name: string;  }) => {
-  const response = await fetch(`set/${id}`, {
+  const response = await fetch(`http://localhost:3000/set/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
@@ -44,7 +44,7 @@ export const updateSet = async (id: number, updates: { name: string;  }) => {
 
 // Delete a flashcard set by ID
 export const deleteSet = async (id: number) => {
-  const response = await fetch(`set/${id}`, { method: "DELETE" });
+  const response = await fetch(`http://localhost:3000/set/${id}`, { method: "DELETE" });
   if (!response.ok) throw new Error("Failed to delete set");
 };
 
@@ -204,12 +204,12 @@ export const getFlashcardCollectionById = async (userId: number, collectionId: n
 };
 
 // Create a new flashcard set collection
-export const createFlashcardCollection = async (comment: string, setId: number, name?: string) => {
+export const createFlashcardCollection = async (comments: string, setId: number,userId: number, title?: string) => {
     try {
         const response = await axios.post(`http://localhost:3000/collections`, {
-            comment,
+            comments,
             setID: setId,
-            name
+            title
         });
         return response.data;  // Return the newly created collection data
     } catch (error) {
@@ -219,11 +219,14 @@ export const createFlashcardCollection = async (comment: string, setId: number, 
 };
 
 // Update a flashcard set collection by ID
-export const updateFlashcardCollection = async (collectionId: number, comments: string, setId: number) => {
+export const updateFlashcardCollection = async (collectionId: number, comments: string, setId: number, userId:number, title:string) => {
     try {
         const response = await axios.put(`http://localhost:3000/collection/${collectionId}`, {
+          collectionId,
             comments,
-            setId
+            title,
+            setId,
+            userId
         });
         return response.data;  // Return the updated collection data
     } catch (error) {
