@@ -55,8 +55,7 @@ app.post('/login', async (req, res) => {
     });
 
     if (user && user.password === password) {
-      const token = 'some-generated-token'; // Use JWT or another method
-      res.status(200).json({ token });
+      res.status(200).json({ user_id: user.id });
     } else {
       res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -72,9 +71,10 @@ app.post('/login', async (req, res) => {
 // ===========================
  // Get all flashcard sets
  app.get('/set', async (req: Request, res: Response) => {
+  
   try {
     const sets = await prisma.set.findMany({
-      select: { name: true },
+      select: { name: true, id: true, userId: true },
     });
 
     if (sets.length === 0) {
@@ -94,13 +94,15 @@ app.post('/login', async (req, res) => {
 app.post('/set', async (req: Request, res: Response) => {
   const { name, userId } = req.body;
 
+  const user_id = Number(userId)
+
   try {
     if (!name || !userId) {
       res.status(400).json({ error: 'Missing name or userId in request body' });
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: user_id } });
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
@@ -114,7 +116,7 @@ app.post('/set', async (req: Request, res: Response) => {
 
       const setsCreatedToday = await prisma.set.count({
         where: {
-          userId: user.id,
+          userId: user_id,
           createdAt: {
             gte: startOfDay,
             lt: endOfDay,
@@ -132,7 +134,7 @@ app.post('/set', async (req: Request, res: Response) => {
 
     // Create the new set
     const newSet = await prisma.set.create({
-      data: { name, userId },
+      data: { name, userId: user_id },
     });
 
     res.status(201).json(newSet);
@@ -220,7 +222,7 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
   try {
     let flashcards = await prisma.flashcard.findMany({
       where: { setId: Number(id) },
-      select: { question: true, solution: true, difficulty: true },
+      select: { question: true, solution: true, difficulty: true, setId: true, id: true },
     });
 
     if (shuffle === 'true') {
@@ -264,6 +266,7 @@ app.post('/set/:id/flashcard', async (req: Request, res: Response) => {
     res.status(201).json(newFlashcard);
     console.log('Received set ID:', setId);
   } catch (error) {
+    console.log(error)
     res.status(500).json({ error: 'Error creating flashcard' });
   }
 });
@@ -335,8 +338,8 @@ app.post('/set/:id/comments', async (req: Request, res: Response) => {
     // Create a comment in the database
     const comment = await prisma.comment.create({
       data: {
-        setId,
-        userId,
+        setId: Number(setId),
+        userId: Number(userId),
         rating,
         comments,
       },
@@ -407,19 +410,21 @@ It takes the password from the request body, hashes it with 10 salt rounds,
 and replaces the plaintext password with the hashed one.
 */
 // Middleware for hashing passwords
-const hashPassword = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { password } = req.body;
-        //Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-    // Replace plaintext password with hashed password
-        req.body.password = hashedPassword; 
-        next();
-    } catch (error) {
-        console.error('Error hashing password:', error);
-        res.status(500).json({ error: 'An error occurred while processing the password.' });
-    }
-};
+// const hashPassword = async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//         const { password } = req.body;
+//         //Hash the password
+//         console.log("checkpoint 1")
+//         const hashedPassword = await bcrypt.hash(password, "$2a$20$//62I53nuTneO3UBa/n97.");
+//         console.log("checkpoint 2")
+//     // Replace plaintext password with hashed password
+//         req.body.password = hashedPassword; 
+//         next();
+//     } catch (error) {
+//         console.error('Error hashing password:', error);
+//         res.status(500).json({ error: 'An error occurred while processing the password.' });
+//     }
+// };
 /*
 POST /user creates a new user after validating input and hashing the password.
 prisma.user.create() creates a new user record in the database
@@ -428,8 +433,10 @@ On success, it returns the created user data with a 201 status code.
 On failure, it logs the error and returns a 400 status with an error message.
 */
 // Route to create a new user
-app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Response) => {
+// app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Response) => {
+app.post('/user',validateUserInput, async (req: Request, res: Response) => {
     const { username, password,  role, } = req.body;
+    console.log('Create user called')
 
     try {
         // Create the new user
@@ -748,7 +755,7 @@ app.delete('/collection/:id', async (req: Request, res: Response) => {
          return; }
       // Check if the collection exists
       const collection = await prisma.collection.findUnique({
-        where: { id: collectionId },
+        where: { id: Number(collectionId) },
       });
   
       if (!collection) {
@@ -758,7 +765,7 @@ app.delete('/collection/:id', async (req: Request, res: Response) => {
   
       // Delete the collection
       await prisma.collection.delete({
-        where: { id: collectionId },
+        where: { id: Number(collectionId) },
       });
   
       // Respond with 204 No Content (successfully deleted)
@@ -800,10 +807,11 @@ It stores a title, userId, and description in the collection table.
 
 app.post('/collection', async (req: Request, res: Response) => {
   console.log('Collection route hit');
+  console.log(req.body)
   const { setId, userId, title, comment } = req.body;
 
   // Ensure the necessary fields are provided
-  if (!setId || !userId || !title || comment) {
+  if (!setId || !userId || !title || !comment) {
      res.status(400).json({ message: 'setId, userId,comment and title are required' });
      return;
   }
@@ -811,7 +819,7 @@ app.post('/collection', async (req: Request, res: Response) => {
   try {
     // Check if the flashcard set exists
     const flashcardSet = await prisma.set.findUnique({
-      where: { id: setId },
+      where: { id: Number(setId) },
     });
 
     if (!flashcardSet) {
@@ -824,8 +832,8 @@ app.post('/collection', async (req: Request, res: Response) => {
       data: {
         title,    
         comment, 
-        setId,
-        userId,
+        setId: Number(setId),
+        userId: Number(userId),
       },
       include: {
         set: true,

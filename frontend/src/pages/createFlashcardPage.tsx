@@ -1,35 +1,46 @@
-import React, { useState, useEffect } from "react";
-import { updateSet, deleteSet, fetchSets, createSet, fetchFlashcardSet, createFlashcard } from "../utils/api";
-import { Flashcard, Sets} from "../Types/type";
+import React, { useEffect, useState } from "react";
+import {updateSet, deleteSet, createSet, createFlashcard, fetchSets, fetchFlashcardSet} from "../utils/api";
 
+// Define interfaces
+interface Flashcard {
+  setId: number;
+  question: string;
+  solution: string;
+  difficulty: string;
+}
 
+interface Sets {
+  id: number;
+  name: string;
+}
 
 const FlashcardSetPage: React.FC = () => {
   const [sets, setSets] = useState<Sets[]>([]);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [newSetName, setNewSetName] = useState("");
-  const [newFlashcard, setNewFlashcard] = useState<Flashcard>({id:0,
+  const [newFlashcard, setNewFlashcard] = useState<Flashcard>({
     setId: 0,
     question: "",
     solution: "",
     difficulty: "",
   });
+  const [loaded, setLoaded] = useState<boolean>(false)
+
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
+
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
 
-  // Fetch sets and flashcards when component mounts
   useEffect(() => {
-    const getSets = async () => {
-      try {
-        const setsFromDb = await fetchSets();
-        setSets(setsFromDb);
-      } catch (error) {
-        console.error("Error fetching sets:", error);
+    async function LoadFlashcardSets() {
+      if (!loaded) {
+        const data = await fetchSets()
+        setSets(data)
+        setLoaded(true)
       }
-    };
+    }
 
-    getSets();
-  }, []);
+    LoadFlashcardSets()
+  }, [])
 
   const handleAddSet = async () => {
     if (!newSetName) {
@@ -37,73 +48,78 @@ const FlashcardSetPage: React.FC = () => {
       return;
     }
     try {
-      const newSet = await createSet({ name: newSetName });
+      const user_id = localStorage.getItem('token') || ''
+      const newSet = await createSet({name: newSetName, userId: user_id}); 
       setSets([...sets, newSet]);
-      setNewSetName(""); // Reset the input
+      setNewSetName("");
     } catch (error) {
-      alert("Error adding set.");
+      alert("Error creating set.");
     }
   };
-
+  
   const handleAddFlashcard = async () => {
     if (!selectedSetId || !newFlashcard.question || !newFlashcard.solution || !newFlashcard.difficulty) {
       alert("Please complete all fields.");
       return;
     }
-
+  
     try {
-      const newCard = await createFlashcard(newFlashcard);
-      setFlashcards([...flashcards, newCard]);
-      setNewFlashcard({id:0, setId: 0, question: "", solution: "", difficulty: "" });
+      // Call the API to create the flashcard
+      const createdFlashcard = await createFlashcard(selectedSetId, {
+        question: newFlashcard.question,
+        solution: newFlashcard.solution,
+        difficulty: newFlashcard.difficulty,
+      });
+  
+      // Update the local state with the new flashcard
+      setFlashcards([...flashcards, createdFlashcard]);
+  
+      // Reset the form fields
+      setNewFlashcard({ setId: 0, question: "", solution: "", difficulty: "" });
     } catch (error) {
       alert("Error adding flashcard.");
+      console.error(error);
     }
   };
-
-  const handleSelectSet = (setId: number) => {
+  
+  
+  
+  const handleSelectSet = async (setId: number) => {
     setSelectedSetId(setId);
-    const fetchCards = async () => {
-      try {
-        const cardsFromDb = await fetchFlashcardSet(setId);
-        setFlashcards(cardsFromDb);
-      } catch (error) {
-        console.error("Error fetching flashcards:", error);
-      }
-    };
-    fetchCards();
+    const flashcards = await fetchFlashcardSet(setId)
+    console.log(flashcards)
+    setFlashcards(flashcards)
+  };
+
+  const handleFlipCard = (index: number) => {
+    const updatedFlippedCards = new Set(flippedCards);
+    if (updatedFlippedCards.has(index)) {
+      updatedFlippedCards.delete(index);
+    } else {
+      updatedFlippedCards.add(index);
+    }
+    setFlippedCards(updatedFlippedCards);
   };
 
   const handleEditSet = async (setId: number, newName: string) => {
     try {
-      const updatedSet = await updateSet(setId, { name: newName, description: "Updated description" });
+      const updatedSet = await updateSet(setId, { name: newName });
       setSets(sets.map((set) => (set.id === setId ? updatedSet : set)));
-      setNewSetName(""); // Clear the input after editing
+      setNewSetName(""); 
     } catch (error) {
       alert("Error updating set.");
     }
   };
-
+  
+  // Delete Set Handler
   const handleDeleteSet = async (setId: number) => {
     try {
       await deleteSet(setId);
-      setSets(sets.filter((set) => set.id !== setId));
-      setFlashcards(flashcards.filter((card) => card.setId !== setId));
+      setSets(sets.filter((set) => set.id !== setId)); // Remove the deleted set from the state
+      setFlashcards(flashcards.filter((card) => card.setId !== setId)); // Remove related flashcards
     } catch (error) {
       alert("Error deleting set.");
     }
-  };
-
-  // Function to handle card flip
-  const handleFlipCard = (index: number) => {
-    setFlippedCards((prev) => {
-      const updatedFlippedCards = new Set(prev);
-      if (updatedFlippedCards.has(index)) {
-        updatedFlippedCards.delete(index); // Remove card from flipped set
-      } else {
-        updatedFlippedCards.add(index); // Add card to flipped set
-      }
-      return updatedFlippedCards;
-    });
   };
 
   return (
@@ -126,18 +142,18 @@ const FlashcardSetPage: React.FC = () => {
       <div>
         <h3>Select a Set to Add Flashcards:</h3>
         <select
-  value={selectedSetId || ""}
-  onChange={(e) => handleSelectSet(Number(e.target.value))}
-  className="p-2 border mb-4 w-full"
->
-  <option value="">-- Select a Set --</option>
-  {sets.map((set) => (
-    <option key={set.id} value={set.id}>
-      {set.name}
-    </option>
-  ))}
-</select>
-
+          value={selectedSetId || ""}
+          onChange={(e) => handleSelectSet(Number(e.target.value))}
+          className="p-2 border mb-4 w-full"
+          key={-1}
+        >
+          <option key={-2} value="">-- Select a Set --</option>
+          {sets.map((set) => (
+            <option key={set.id} value={set.id}>
+              {set.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Create Flashcard Section */}
@@ -181,13 +197,16 @@ const FlashcardSetPage: React.FC = () => {
           <div key={set.id}>
             {set.id === selectedSetId && (
               <div>
+                
                 <h3>{set.name} Flashcards:</h3>
                 {flashcards
                   .filter((card) => card.setId === set.id)
                   .map((card, index) => (
                     <div
                       key={index}
-                      className={`p-4 mb-4 rounded-lg shadow-lg cursor-pointer transform transition-transform ${flippedCards.has(index) ? "rotate-y-180" : "rotate-y-0"}`}
+                      className={`p-4 mb-4 rounded-lg shadow-lg cursor-pointer transform transition-transform ${
+                        flippedCards.has(index) ? "rotate-y-180" : "rotate-y-0"
+                      }`}
                       onClick={() => handleFlipCard(index)}
                     >
                       <div className="flex justify-between">
@@ -198,6 +217,7 @@ const FlashcardSetPage: React.FC = () => {
                         <div className="mt-4">
                           <strong>Solution:</strong> {card.solution}
                         </div>
+                        
                       )}
                     </div>
                   ))}
@@ -210,4 +230,4 @@ const FlashcardSetPage: React.FC = () => {
   );
 };
 
-export default FlashcardSetPage;
+export default FlashcardSetPage;  

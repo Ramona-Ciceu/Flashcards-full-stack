@@ -1,7 +1,7 @@
 //src/Types/type.tsx
 
 export interface Flashcard {
-  id:number;
+  id: number,
   setId: number;
   question: string;
   solution: string;
