@@ -88,7 +88,7 @@ export const createFlashcard = async (id: number, flashcard: {
 };
 
 
-// Update flashcard set
+// Update flashcard set byt flashcard id
 export const updateFlashcardSet = async (data: { setId: number; question: string; solution: string; difficulty: string; flashcardId: number; }) => {
   const response = await fetch(`http://localhost:3000/set/${data.setId}/flashcard/${data.flashcardId}`, {
     method: "PUT",
@@ -98,7 +98,7 @@ export const updateFlashcardSet = async (data: { setId: number; question: string
   return json.data
 };
 
-// Delete flashcard set
+// Delete flashcard set by flashcard id
 export const deleteFlashcardSet = async (setId: number, flashcardId: number) => {
   const response = await fetch(`http://localhost:3000/set/${setId}/flashcard/${flashcardId}`, {
     method: "DELETE"
@@ -110,6 +110,16 @@ export const deleteFlashcardSet = async (setId: number, flashcardId: number) => 
 //
 // USER CALLS
 //
+// Sign-up user
+export const signupUser = async ( username: string, password: string, role: string ) => {
+  
+    const response = await fetch('http://localhost:3000/signup',{
+      method: "POST"
+  } );
+    const json = await response.json()
+    return json.data;
+};
+
 export const fetchUser = async () => {
   const response = await fetch(`http://localhost:3000/user`, {
     method: "GET"
@@ -202,14 +212,22 @@ export const getFlashcardCollectionById = async (userId: number, collectionId: n
         throw error;
     }
 };
+export async function addSetToCollection(collectionId: number, setId: number) {
+  await fetch(`http://localhost:3000/collections/${collectionId}/sets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ setId }),
+  });
+}
 
 // Create a new flashcard set collection
-export const createFlashcardCollection = async (comments: string, setId: number,userId: number, title?: string) => {
+export const createFlashcardCollection = async (comment: string, setId: number, userId: number, title?: string) => {
     try {
-        const response = await axios.post(`http://localhost:3000/collections`, {
-            comments,
-            setID: setId,
-            title
+        const response = await axios.post(`http://localhost:3000/collection`, {
+            comment,
+            setId,
+            title,
+            userId,
         });
         return response.data;  // Return the newly created collection data
     } catch (error) {
@@ -219,11 +237,11 @@ export const createFlashcardCollection = async (comments: string, setId: number,
 };
 
 // Update a flashcard set collection by ID
-export const updateFlashcardCollection = async (collectionId: number, comments: string, setId: number, userId:number, title:string) => {
+export const updateFlashcardCollection = async (collectionId: number, comment: string, setId: number, userId:number, title:string) => {
     try {
         const response = await axios.put(`http://localhost:3000/collection/${collectionId}`, {
           collectionId,
-            comments,
+            comment,
             title,
             setId,
             userId

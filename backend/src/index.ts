@@ -65,6 +65,22 @@ app.post('/login', async (req, res) => {
   }
 });
 
+//Route for signup
+app.post('/signup', async (req: Request, res: Response): Promise<void> => {
+  const { username, password, role } = req.body;
+  
+  try {
+       
+    // Create the user in the database
+    const user = await prisma.user.create({
+      data: { username, password, role },
+    });
+    // Return only the user object (no token)
+    res.status(201).json({ user });
+  } catch (error) {
+    res.status(500).json({ error: 'User could not be created' });
+  }
+});
         
 // ===========================
 // Flashcard Set Routes
@@ -723,7 +739,7 @@ app.put('/collection/:id', async (req: Request, res: Response) => {
     const updatedCollection = await prisma.collection.update({
       where: { id: collectionId },
       data: {
-        title: title, // Update title
+        title: title, 
         userId: userId ? Number(userId) : undefined,
         setId: setId ? Number(setId) : undefined,
         comment: comment, 
@@ -852,6 +868,33 @@ app.post('/collection', async (req: Request, res: Response) => {
   }
 });
 
+// POST endpoint to add a set to a collection
+app.post('/collections/:collectionId/sets', async (req: Request, res: Response) => {
+  const { collectionId } = req.params; // Get the collectionId from the URL
+  const { setId } = req.body; // Get the setId from the request body
+
+  try {
+    // Add the set to the collection by updating the collection record
+    const updatedCollection = await prisma.collection.update({
+      where: { id: Number(collectionId) },
+      data: {
+        set: {
+          connect: { id: setId } // Assuming 'sets' is a relation field in the collection model
+        }
+      }
+    });
+
+    // Respond with the updated collection data
+    res.status(200).json({
+      message: 'Set added to collection successfully',
+      data: updatedCollection
+    });
+  } catch (error) {
+    // Error handling in case of failure
+    res.status(500).json({ error: 'Error fetching random collection' });
+    return;
+  }
+});
 
  // GET /collections/random: Redirect to a random flashcard set collection.
 app.get('/collections/random', async (req: Request, res: Response) => {

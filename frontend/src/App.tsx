@@ -8,11 +8,13 @@ import FlashcardSetPage from "./pages/createFlashcardPage";
 import CollectionPage from "./pages/collectionPage";
 
 
+
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/flashcard-sets" element={<FlashcardSetPage />} />
         <Route path="/collections" element={<CollectionPage />} />

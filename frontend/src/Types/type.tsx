@@ -31,8 +31,10 @@ export interface Sets {
   }
   
   export interface Collection {
+    id:number;
+    title: string;
     comment: string;
-    set: Sets;
-    user: User;
+    setId:number;
+    userId: number;
   }
   

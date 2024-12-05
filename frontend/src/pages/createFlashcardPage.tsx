@@ -1,33 +1,21 @@
 import React, { useEffect, useState } from "react";
 import {updateSet, deleteSet, createSet, createFlashcard, fetchSets, fetchFlashcardSet} from "../utils/api";
-
-// Define interfaces
-interface Flashcard {
-  setId: number;
-  question: string;
-  solution: string;
-  difficulty: string;
-}
-
-interface Sets {
-  id: number;
-  name: string;
-}
+import { Sets, Flashcard } from "../Types/type";
 
 const FlashcardSetPage: React.FC = () => {
   const [sets, setSets] = useState<Sets[]>([]);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [newSetName, setNewSetName] = useState("");
   const [newFlashcard, setNewFlashcard] = useState<Flashcard>({
+    id:0,
     setId: 0,
     question: "",
     solution: "",
     difficulty: "",
   });
+  const [editingSetId, setEditingSetId] = useState<number | null>(null);
   const [loaded, setLoaded] = useState<boolean>(false)
-
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
-
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -75,7 +63,7 @@ const FlashcardSetPage: React.FC = () => {
       setFlashcards([...flashcards, createdFlashcard]);
   
       // Reset the form fields
-      setNewFlashcard({ setId: 0, question: "", solution: "", difficulty: "" });
+      setNewFlashcard({ setId: 0,id:0, question: "", solution: "", difficulty: "" });
     } catch (error) {
       alert("Error adding flashcard.");
       console.error(error);
@@ -91,13 +79,13 @@ const FlashcardSetPage: React.FC = () => {
     setFlashcards(flashcards)
   };
 
-  const handleFlipCard = (index: number) => {
+  const handleFlipCard = (cardId: number) => {
     setFlippedCards((prevFlipped) => {
       const newFlipped = new Set(prevFlipped);
-      if (newFlipped.has(index)) {
-        newFlipped.delete(index); // Hide the answer
+      if (newFlipped.has(cardId)) {
+        newFlipped.delete(cardId); // Hide the answer
       } else {
-        newFlipped.add(index); // Reveal the answer
+        newFlipped.add(cardId); // Reveal the answer
       }
       return newFlipped;
     });
@@ -200,14 +188,40 @@ const FlashcardSetPage: React.FC = () => {
             {set.id === selectedSetId && (
               <div>
                 <h2 font-bold>{set.name} Flashcards:</h2>
-                <h3></h3>
-
+                {/* Conditional Rendering for edit Mode */}
+                {editingSetId === set.id ? (
+                  <div>
+                    <input 
+                     type="text"
+                     value={newSetName}
+                     onChange={(e) => setNewSetName(e.target.value )}
+                      placeholder="Enter new set name "
+                     className="p-2 border mb-4 w-full"
+                    />
+                    <button
+                    onClick={() => {
+                      handleEditSet(set.id, newSetName);
+                setEditingSetId(null); // Exit editing mode
+                    }}
+                    className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                    >
+                      Save
+                    </button>
+                    <button 
+                     onClick={() => setEditingSetId(null)} // Exit editing without saving
+                     className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                     >
+                     Cancel
+                     </button>
+                     </div>
+                ) :(
                 <button
-                  onClick={() => handleEditSet(set.id, set.name)}
+                  onClick={() => setEditingSetId(set.id)}
                   className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-green-600"
                   >
                 Edit
                 </button>
+                )}
                 <button
                   onClick={() => handleDeleteSet(set.id)}
                   className="p-2 bg-red-500 text-white rounded-lg hover:bg-green-600"
@@ -218,7 +232,7 @@ const FlashcardSetPage: React.FC = () => {
                   .filter((card) => card.setId === set.id)
                   .map((card) => (
                    <div
-                   key={card.setId}
+                   key={card.id}
                    className="p-4 mb-4 rounded-lg transform transition-transform"
                    >
                       <div className="flex justify-between">
@@ -232,7 +246,7 @@ const FlashcardSetPage: React.FC = () => {
                       <div className="flex gap-2 mt-4">
     
         
-                      {flippedCards.has(card.setId) && (
+                      {flippedCards.has(card.id) && (
                   <div className="mt-4 text-green-700">
                     <strong>Solution:</strong> {card.solution}
                   </div>
@@ -240,11 +254,12 @@ const FlashcardSetPage: React.FC = () => {
 </div>
              {/* Add the Flip Card button here */}
                 <button
-                  onClick={() => handleFlipCard(card.setId)}
+                  onClick={() => handleFlipCard(card.id)}
                   className="mt-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-green-500"
                 >
                   Show Solution
                 </button>
+             
                 <button
         onClick={() => handleEditSet(set.id, set.name)}
          className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-blue-600"
