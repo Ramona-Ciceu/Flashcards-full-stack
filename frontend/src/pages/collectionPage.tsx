@@ -58,6 +58,7 @@ const CollectionPage: React.FC = () => {
     }
     try {
       await addSetToCollection(selectedCollectionId, selectedSetId);
+      
       // Update the state with the updated collection
       setCollections((prevCollections) =>
         prevCollections.map((collection) =>

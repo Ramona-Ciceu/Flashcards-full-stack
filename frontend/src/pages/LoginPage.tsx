@@ -16,6 +16,9 @@ const LoginPage: React.FC = () => {
         password,
       });
 
+      localStorage.setItem("username", response.data.user.username);
+    
+
       console.log(response)
       console.log(response.data.user_id)
 
