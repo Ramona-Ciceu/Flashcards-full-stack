@@ -1,34 +1,37 @@
 import React, { useEffect, useState } from "react";
-import {updateSet, deleteSet, createSet, createFlashcard, fetchSets, fetchFlashcardSet} from "../utils/api";
+import { updateSet, deleteSet, createSet, createFlashcard, fetchSets, fetchFlashcardSet, deleteFlashcardSet ,updateFlashcardSet} from "../utils/api";
 import { Sets, Flashcard } from "../Types/type";
+
+
 
 const FlashcardSetPage: React.FC = () => {
   const [sets, setSets] = useState<Sets[]>([]);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [newSetName, setNewSetName] = useState("");
   const [newFlashcard, setNewFlashcard] = useState<Flashcard>({
-    id:0,
+    id: 0,
     setId: 0,
     question: "",
     solution: "",
     difficulty: "",
   });
   const [editingSetId, setEditingSetId] = useState<number | null>(null);
-  const [loaded, setLoaded] = useState<boolean>(false)
+  const [editingFlashcardId, setEditingFlashcardId] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState<boolean>(false);
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     async function LoadFlashcardSets() {
       if (!loaded) {
-        const data = await fetchSets()
-        setSets(data)
-        setLoaded(true)
+        const data = await fetchSets();
+        setSets(data);
+        setLoaded(true);
       }
     }
 
-    LoadFlashcardSets()
-  }, [])
+    LoadFlashcardSets();
+  }, []);
 
   const handleAddSet = async () => {
     if (!newSetName) {
@@ -36,47 +39,38 @@ const FlashcardSetPage: React.FC = () => {
       return;
     }
     try {
-      const user_id = localStorage.getItem('token') || ''
-      const newSet = await createSet({name: newSetName, userId: user_id}); 
+      const user_id = localStorage.getItem("token") || "";
+      const newSet = await createSet({ name: newSetName, userId: user_id });
       setSets([...sets, newSet]);
       setNewSetName("");
     } catch (error) {
       alert("Error creating set.");
     }
   };
-  
+
   const handleAddFlashcard = async () => {
     if (!selectedSetId || !newFlashcard.question || !newFlashcard.solution || !newFlashcard.difficulty) {
       alert("Please complete all fields.");
       return;
     }
-  
+
     try {
-      // Call the API to create the flashcard
       const createdFlashcard = await createFlashcard(selectedSetId, {
         question: newFlashcard.question,
         solution: newFlashcard.solution,
         difficulty: newFlashcard.difficulty,
       });
-  
-      // Update the local state with the new flashcard
       setFlashcards([...flashcards, createdFlashcard]);
-  
-      // Reset the form fields
-      setNewFlashcard({ setId: 0,id:0, question: "", solution: "", difficulty: "" });
+      setNewFlashcard({ setId: 0, id: 0, question: "", solution: "", difficulty: "" });
     } catch (error) {
       alert("Error adding flashcard.");
-      console.error(error);
     }
   };
-  
-  
-  
+
   const handleSelectSet = async (setId: number) => {
     setSelectedSetId(setId);
-    const flashcards = await fetchFlashcardSet(setId)
-    console.log(flashcards)
-    setFlashcards(flashcards)
+    const flashcards = await fetchFlashcardSet(setId);
+    setFlashcards(flashcards);
   };
 
   const handleFlipCard = (cardId: number) => {
@@ -91,22 +85,49 @@ const FlashcardSetPage: React.FC = () => {
     });
   };
 
-  const handleEditSet = async (setId: number, newName: string) => {
+  const handleEditFlashcard = (flashcard: Flashcard) => {
+    setEditingFlashcardId(flashcard.id);
+    setNewFlashcard({ ...flashcard });
+  };
+
+  const handleSaveFlashcard = async () => {
+    if (editingFlashcardId === null) return;
+
     try {
-      const updatedSet = await updateSet(setId, { name: newName });
-      setSets(sets.map((set) => (set.id === setId ? updatedSet : set)));
-      setNewSetName(""); 
+      const updatedFlashcard = await updateFlashcardSet({
+        setId: selectedSetId!,
+        flashcardId: editingFlashcardId,
+        question: newFlashcard.question,
+        solution: newFlashcard.solution,
+        difficulty: newFlashcard.difficulty,
+      });
+      setFlashcards(flashcards.map((card) => (card.id === editingFlashcardId ? updatedFlashcard : card)));
+      setEditingFlashcardId(null);
+      setNewFlashcard({ setId: 0, id: 0, question: "", solution: "", difficulty: "" });
     } catch (error) {
-      alert("Error updating set.");
+      alert("Error saving flashcard.");
     }
   };
-  
-  // Delete Set Handler
+
+  const handleCancelEdit = () => {
+    setEditingFlashcardId(null);
+    setNewFlashcard({ setId: 0, id: 0, question: "", solution: "", difficulty: "" });
+  };
+
+  const handleDeleteFlashcard = async (flashcardId: number) => {
+    try {
+      await deleteFlashcardSet(selectedSetId!, flashcardId);
+      setFlashcards(flashcards.filter((card) => card.id !== flashcardId));
+    } catch (error) {
+      alert("Error deleting flashcard.");
+    }
+  };
+
   const handleDeleteSet = async (setId: number) => {
     try {
       await deleteSet(setId);
-      setSets(sets.filter((set) => set.id !== setId)); // Remove the deleted set from the state
-      setFlashcards(flashcards.filter((card) => card.setId !== setId)); // Remove related flashcards
+      setSets(sets.filter((set) => set.id !== setId));
+      setFlashcards(flashcards.filter((card) => card.setId !== setId));
     } catch (error) {
       alert("Error deleting set.");
     }
@@ -127,17 +148,18 @@ const FlashcardSetPage: React.FC = () => {
           Create Set
         </button>
       </div>
-  
+
       {/* Flashcard Set Selection */}
       <div>
-        <h3>Select a Set to Add Flashcards:</h3>
+        <h3>Select a Set to Add Flashcards or to display Sets:</h3>
         <select
           value={selectedSetId || ""}
           onChange={(e) => handleSelectSet(Number(e.target.value))}
           className="p-2 border mb-4 w-full"
-          key={-1}
         >
-          <option key={-2} value="">-- Select a Set --</option>
+          <option key={-2} value="">
+            -- Select a Set --
+          </option>
           {sets.map((set) => (
             <option key={set.id} value={set.id}>
               {set.name}
@@ -145,7 +167,7 @@ const FlashcardSetPage: React.FC = () => {
           ))}
         </select>
       </div>
-  
+
       {/* Create Flashcard Section */}
       <div>
         {selectedSetId && (
@@ -166,123 +188,82 @@ const FlashcardSetPage: React.FC = () => {
             />
             <input
               type="text"
-              placeholder="Enter difficulty"
+              placeholder="Enter difficulty: easy, medium or hard"
               value={newFlashcard.difficulty}
               onChange={(e) => setNewFlashcard({ ...newFlashcard, difficulty: e.target.value })}
               className="p-2 border mb-4 w-full"
             />
-            <button
-              onClick={handleAddFlashcard}
-              className="p-2 bg-cyan-500 text-white rounded-lg hover:bg-green-500"
-            >
+            <button onClick={handleAddFlashcard} className="p-2 bg-cyan-500 text-white rounded-lg hover:bg-green-500">
               Add Flashcard
             </button>
           </div>
         )}
       </div>
-  
+
       {/* Display Flashcards for the Selected Set */}
-      <div>
-        {sets.map((set) => (
-          <div key={set.id}>
-            {set.id === selectedSetId && (
-              <div>
-                <h2 font-bold>{set.name} Flashcards:</h2>
-                {/* Conditional Rendering for edit Mode */}
-                {editingSetId === set.id ? (
-                  <div>
-                    <input 
-                     type="text"
-                     value={newSetName}
-                     onChange={(e) => setNewSetName(e.target.value )}
-                      placeholder="Enter new set name "
-                     className="p-2 border mb-4 w-full"
-                    />
-                    <button
-                    onClick={() => {
-                      handleEditSet(set.id, newSetName);
-                setEditingSetId(null); // Exit editing mode
-                    }}
-                    className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                    >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {flashcards
+          .filter((card) => card.setId === selectedSetId)
+          .map((card) => (
+            <div key={card.id} className="p-4 mb-4 bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+              {editingFlashcardId === card.id ? (
+                <div>
+                  <input
+                    type="text"
+                    value={newFlashcard.question}
+                    onChange={(e) => setNewFlashcard({ ...newFlashcard, question: e.target.value })}
+                    className="p-2 mb-2 border w-full"
+                  />
+                  <input
+                    type="text"
+                    value={newFlashcard.solution}
+                    onChange={(e) => setNewFlashcard({ ...newFlashcard, solution: e.target.value })}
+                    className="p-2 mb-2 border w-full"
+                  />
+                  <input
+                    type="text"
+                    value={newFlashcard.difficulty}
+                    onChange={(e) => setNewFlashcard({ ...newFlashcard, difficulty: e.target.value })}
+                    className="p-2 mb-2 border w-full"
+                  />
+                  <div className="mt-2">
+                    <button onClick={handleSaveFlashcard} className="p-2 bg-cyan-500 text-white rounded-lg mr-2">
                       Save
                     </button>
-                    <button 
-                     onClick={() => setEditingSetId(null)} // Exit editing without saving
-                     className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                     >
-                     Cancel
-                     </button>
-                     </div>
-                ) :(
-                <button
-                  onClick={() => setEditingSetId(set.id)}
-                  className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-green-600"
-                  >
-                Edit
-                </button>
-                )}
-                <button
-                  onClick={() => handleDeleteSet(set.id)}
-                  className="p-2 bg-red-500 text-white rounded-lg hover:bg-green-600"
-                   > 
-                   Delete
-                  </button>
-                {flashcards
-                  .filter((card) => card.setId === set.id)
-                  .map((card) => (
-                   <div
-                   key={card.id}
-                   className="p-4 mb-4 rounded-lg transform transition-transform"
-                   >
-                      <div className="flex justify-between">
-                        <div>
-                          <strong>Question:</strong> {card.question}
-                        </div>
-                        <div>
-                          <strong>Difficulty:</strong> {card.difficulty}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-    
-        
-                      {flippedCards.has(card.id) && (
-                  <div className="mt-4 text-green-700">
-                    <strong>Solution:</strong> {card.solution}
+                    <button onClick={handleCancelEdit} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-700">
+                      Cancel
+                    </button>
                   </div>
-                )}
-</div>
-             {/* Add the Flip Card button here */}
-                <button
-                  onClick={() => handleFlipCard(card.id)}
-                  className="mt-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-green-500"
-                >
-                  Show Solution
-                </button>
-             
-                <button
-        onClick={() => handleEditSet(set.id, set.name)}
-         className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-blue-600"
-          >
-        Edit
-        </button>
-        <button
-        onClick={() => handleDeleteSet(set.id)}
-         className="p-2 bg-red-500 text-white rounded-lg hover:bg-blue-600"
-         >
-         Delete
-         </button>
-         </div>
-         
-            ))}
-       
-   </div>
-      )}
-     </div>
-        ))}
+                </div>
+              ) : (
+                <div>
+                  <p>Question: {card.question}</p>
+                  {flippedCards.has(card.id) && <p>Solution: {card.solution}</p>}
+                  <p>Difficulty: {card.difficulty}</p>
+                  <button onClick={() => handleFlipCard(card.id)} className="p-2 bg-cyan-500 text-white rounded-lg mt-2 hover:bg-green-600">
+                    Answer
+                  </button>
+                  <div className="mt-2">
+                    <button
+                      onClick={() => handleEditFlashcard(card)}
+                      className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-green-700"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteFlashcard(card.id)}
+                      className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-700 ml-2"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );
-}
-  
-export default FlashcardSetPage;  
+};
+
+export default FlashcardSetPage;

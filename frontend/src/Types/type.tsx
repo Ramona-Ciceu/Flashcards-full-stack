@@ -34,7 +34,8 @@ export interface Sets {
     id:number;
     title: string;
     comment: string;
-    setId:number;
-    userId: number;
+    createdAt:string;
+    updatedAt:string
+    sets?:Sets[]
   }
   

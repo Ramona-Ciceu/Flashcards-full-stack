@@ -47,8 +47,8 @@ model User {
 
 model Collection {
   id      Int  @id @default(autoincrement())
-  title    String
-  comment  String
+  title  String
+  comment    String
   userId  Int
   setId   Int
   createdAt DateTime       @default(now())

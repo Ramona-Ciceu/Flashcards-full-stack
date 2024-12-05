@@ -1,32 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
 import {
   getAllFlashcardCollections,
   deleteFlashcardCollection,
   updateFlashcardCollection,
   createFlashcardCollection,
   addSetToCollection,
-  fetchFlashcardSet
-} from '../utils/api'; 
-import { Collection } from '../Types/type';
+  fetchSets,
+} from "../utils/api";
+import { Collection, Sets } from "../Types/type";
 
 const CollectionPage: React.FC = () => {
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [sets, setSets] = useState<Sets[]>([]);
   const [newCollectionName, setNewCollectionName] = useState("");
-  const [editingCollectionID, setEditingCollectionId] = useState<number | null>(null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<number | null>(null);
+  const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
   const [loaded, setLoaded] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCollectionId, setSelectedCollectionId] = useState<number | null>(null);
 
   useEffect(() => {
-    async function LoadCollections() {
+    async function loadCollectionsAndSets() {
       if (!loaded) {
-        const data = await getAllFlashcardCollections();
-        setCollections(data);
+        const collectionsData = await getAllFlashcardCollections();
+        const setsData = await fetchSets();
+        setCollections(collectionsData);
+        setSets(setsData);
         setLoaded(true);
       }
     }
-    LoadCollections();
+    loadCollectionsAndSets();
   }, [loaded]);
 
   const handleAddCollection = async () => {
@@ -34,61 +36,47 @@ const CollectionPage: React.FC = () => {
       alert("Please provide a title for the collection.");
       return;
     }
+  
+    // Replace these with actual values from your application
+    const comment = "New collection comment"; // Or get it from user input
+    const setId = selectedSetId || 0; // Ensure a valid setId is provided
+    const userId = localStorage.getItem('token') || '' 
+  
     try {
-      const user_id = localStorage.getItem('token') || '';
-      const set_id = localStorage.getItem('setId') || '';
-      if (!user_id || !set_id) {
-        alert("User ID or Set ID is missing.");
-        return;
-      }
-      
-      const newCollection = await createFlashcardCollection(
-        newCollectionName,  
-        parseInt(set_id),    
-        parseInt(user_id),   
-        newCollectionName    
-      );
+      const newCollection = await createFlashcardCollection( newCollectionName);
       setCollections([...collections, newCollection]);
-      setNewCollectionName(""); // Clear the input after adding
+      setNewCollectionName("");
     } catch (error) {
       alert("Error creating collection.");
     }
   };
-
-  const handleSelectCollection = async (setId: number) => {
-    setSelectedCollectionId(setId);
-    const sets = await fetchFlashcardSet(setId);
-    console.log(sets);
-    // Assuming you want to add sets to the collection, not replace them
-    setCollections((prevCollections) =>
-      prevCollections.map((collection) =>
-        collection.id === setId ? { ...collection, sets } : collection
-      )
-    );
-  };
-
-  const handleEditSet = async (collectionId: number, newComment: string, setId: number, userId: number, newTitle: string) => {
+  
+  const handleAddSetToCollection = async () => {
+    if (!selectedCollectionId || !selectedSetId) {
+      alert("Please select a collection and a set.");
+      return;
+    }
     try {
-      const updatedSet = await updateFlashcardCollection(
-        collectionId,          
-        newComment,            
-        setId,                
-        userId,                
-        newTitle               
+      await addSetToCollection(selectedCollectionId, selectedSetId);
+      // Update the state with the updated collection
+      setCollections((prevCollections) =>
+        prevCollections.map((collection) =>
+          collection.id === selectedCollectionId
+            ? { ...collection, sets: [...(collection.sets || []), sets.find((s) => s.id === selectedSetId)!] }
+            : collection
+        )
       );
-      setCollections(collections.map((set) => (set.id === setId ? updatedSet : set)));
-      setNewCollectionName(""); // Reset input field after update
     } catch (error) {
-      alert("Error updating set.");
+      alert("Error adding set to collection.");
     }
   };
 
-  const handleDelete = async (collectionId: number) => {
+  const handleDeleteCollection = async (collectionId: number) => {
     try {
       await deleteFlashcardCollection(collectionId);
-      setCollections((prev) => prev.filter((collection) => collection.id !== collectionId));
+      setCollections(collections.filter((collection) => collection.id !== collectionId));
     } catch (error) {
-      setError('Failed to delete collection');
+      setError("Failed to delete collection");
     }
   };
 
@@ -100,58 +88,77 @@ const CollectionPage: React.FC = () => {
 
       {/* Create Collection Form */}
       <div className="mb-6">
-        <div className="space-y-4">
-          <input
-            type="text"
-            name="title"
-            value={newCollectionName}
-            onChange={(e) => setNewCollectionName(e.target.value)}
-            placeholder="Enter collection title"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="text"
-            name="comment"
-            value={newCollectionName} // You may want a separate state for comment
-            onChange={(e) => setNewCollectionName(e.target.value)}
-            placeholder="Enter collection comment"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={handleAddCollection}
-            className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
-          >
-            Create Collection
-          </button>
-        </div>
+        <input
+          type="text"
+          placeholder="Enter collection name"
+          value={newCollectionName}
+          onChange={(e) => setNewCollectionName(e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onClick={handleAddCollection}
+          className="w-full bg-blue-500 text-white py-3 rounded-lg mt-3 font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+        >
+          Create Collection
+        </button>
       </div>
 
-      {/* Select Collection */}
+      {/* Select Collection and Set */}
       <div className="mb-6">
         <select
+          value={selectedCollectionId || ""}
           onChange={(e) => setSelectedCollectionId(Number(e.target.value))}
           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value={undefined}>Select a collection</option>
+          <option value="">Select a Collection</option>
           {collections.map((collection) => (
             <option key={collection.id} value={collection.id}>
               {collection.title}
             </option>
           ))}
         </select>
+
+        <select
+          value={selectedSetId || ""}
+          onChange={(e) => setSelectedSetId(Number(e.target.value))}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-3"
+        >
+          <option value="">Select a Set</option>
+          {sets.map((set) => (
+            <option key={set.id} value={set.id}>
+              {set.name}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={handleAddSetToCollection}
+          className="w-full bg-green-500 text-white py-3 rounded-lg mt-3 font-semibold hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300"
+        >
+          Add Set to Collection
+        </button>
       </div>
 
-      {/* Display Existing Collections */}
+      {/* Display Collections */}
       <div>
         {collections.map((collection) => (
-          <div key={collection.id} className="flex justify-between items-center mb-4 p-4 border border-gray-200 rounded-lg shadow-sm">
-            <h3 className="text-xl font-semibold">{collection.title}</h3>
+          <div key={collection.id} className="p-4 border border-gray-200 rounded-lg shadow-sm mb-4">
+            <h2 className="text-2xl font-semibold">{collection.title}</h2>
+            
             <button
-              onClick={() => handleDelete(collection.id)}
-              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
+              onClick={() => handleDeleteCollection(collection.id)}
+              className="text-red-500 text-sm underline mt-2"
             >
-              Delete
+              Delete Collection
             </button>
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold">Sets in this Collection:</h3>
+              {collection.sets?.length ? (
+                collection.sets.map((set) => <p key={set.id}>{set.name}</p>)
+              ) : (
+                <p>No sets added yet.</p>
+              )}
+            </div>
           </div>
         ))}
       </div>
