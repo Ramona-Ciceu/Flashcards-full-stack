@@ -18,7 +18,6 @@ const App: React.FC = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/flashcard-sets" element={<FlashcardSetPage />} />
         <Route path="/collections" element={<CollectionPage />} />
-       
       </Routes>
     </Router>
   );
