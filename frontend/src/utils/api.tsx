@@ -110,8 +110,8 @@ export const deleteFlashcardSet = async (setId: number, flashcardId: number) => 
 //
 // USER CALLS
 //
-// Sign-up user
-export const signupUser = async ( username: string, password: string, role: string ) => {
+/* Sign-up user
+export const signupUser = async (data: { username: string, password: string, role: string }) => {
   
     const response = await fetch('http://localhost:3000/signup',{
       method: "POST"
@@ -119,6 +119,24 @@ export const signupUser = async ( username: string, password: string, role: stri
     const json = await response.json()
     return json.data;
 };
+*/
+//Login user
+export const loginUser = async (username: string, password: string) => {
+  const response = await fetch(`http://localhost:3000/user/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Invalid username or password");
+  }
+
+  return await response.json();
+};
+
 
 export const fetchUser = async () => {
   const response = await fetch(`http://localhost:3000/user`, {
@@ -189,116 +207,108 @@ export const fetchSetsByUser = async (userId: number) => {
 //
 // COLLECTIONS CALLS
 //
-// Get all flashcard set collections created by a user
-export const getFlashcardCollectionsByUser = async (userId: number, setId: number) => {
-    try {
-        const response = await axios.get(`http://localhost:3000/user/${userId}/collection`, {
-            params: { setId },
-        });
-        return response.data;  // Return the collection data
-    } catch (error) {
-        console.error('Error fetching flashcard collections:', error);
-        throw error;
-    }
+//Get the collection by user id
+export const getFlashcardCollectionsByUser= async (userId: number) => {
+  const response = await fetch(`http://localhost:3000/user/${userId}/collection`, {
+    method: "GET"
+  });
+  const json = await response.json()
+  return json.data;
 };
 
+
 // Get a flashcard set collection by ID
-export const getFlashcardCollectionById = async (userId: number, collectionId: number) => {
-    try {
-        const response = await axios.get(`http://localhost:3000/user/${userId}/collection/${collectionId}`);
-        return response.data;  // Return the collection data
-    } catch (error) {
-        console.error('Error fetching flashcard collection:', error);
-        throw error;
-    }
+export const getFlashcardCollectionById = async(userId: number, collectionId: number) => {
+ 
+  const response = await fetch(`http://localhost:3000/user/${userId}/collection/${collectionId}`, {
+    method: "GET"
+  });
+  const json = await response.json()
+  return json.data;
 };
+
+
+
 export async function addSetToCollection(collectionId: number, setId: number) {
   await fetch(`http://localhost:3000/collections/${collectionId}/sets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ setId }),
   });
-}
-
-// Create a new flashcard set collection
-export const createFlashcardCollection = async (title?: string, setId?: number, userId?: number, comment?: string) => {
-    try {
-        const response = await axios.post(`http://localhost:3000/collection`, {
-        
-            title,
-            setId,  
-            userId, 
-            comment 
-           
-        });
-        return response.data;  // Return the newly created collection data
-    } catch (error) {
-        console.error('Error creating flashcard collection:', error);
-        throw error;
-    }
 };
 
-// Update a flashcard set collection by ID
-export const updateFlashcardCollection = async (collectionId: number, comment: string, setId: number, userId:number, title:string) => {
-    try {
-        const response = await axios.put(`http://localhost:3000/collection/${collectionId}`, {
-          collectionId,
-            comment,
-            title,
-            setId,
-            userId
-        });
-        return response.data;  // Return the updated collection data
-    } catch (error) {
-        console.error('Error updating flashcard collection:', error);
-        throw error;
-    }
+// Create a new collection
+export const createFlashcardCollection = async ( collection:{
+  title?: string, setId?: number, userId?: number, comment?: string}
+) => {
+  const response = await fetch(`http://localhost:3000/collection`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(collection),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Failed to create collection");
+  }
+  return response.json();
 };
 
-// Delete a flashcard set collection by ID
+// Update collection
+export const updateFlashcardCollection = async (
+  collectionId: number, updates:{comment: string, title:string}
+) => {
+  const response = await fetch(`http://localhost:3000/collection/${collectionId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Failed to update collection");
+  }
+  return response.json();
+};
+
+// Delete a flashcard collection by ID
 export const deleteFlashcardCollection = async (collectionId: number) => {
-    try {
-        await axios.delete(`http://localhost:3000/collection/${collectionId}`);
-        return true;  // Return true if deletion was successful
-    } catch (error) {
-        console.error('Error deleting flashcard collection:', error);
-        throw error;
-    }
+  const response = await fetch(`http://localhost:3000/collection/${collectionId}`, { method: "DELETE" });
+  if (!response.ok) throw new Error("Failed to delete collection");
 };
 
 // Get all flashcard collections
 export const getAllFlashcardCollections = async () => {
-    try {
-        const response = await axios.get(`http://localhost:3000/collection`);
-        return response.data;  // Return all collections
-    } catch (error) {
-        console.error('Error fetching all flashcard collections:', error);
-        throw error;
-    }
+  const response = await fetch("http://localhost:3000/collection", { method: "GET"});
+  console.log(response)
+  if (!response.ok) throw new Error("Failed to fetch collection");
+  return response.json();
 };
 
-// Get a random flashcard set collection
+// Get random flashcard collections
 export const getRandomFlashcardCollection = async () => {
-    try {
-        const response = await axios.get(`http://localhost:3000/collection/random`);
-        return response.data;  // Return the random collection data
-    } catch (error) {
-        console.error('Error fetching random flashcard collection:', error);
-        throw error;
-    }
+  const response = await fetch("http://localhost:3000/collection/random", { method: "GET"});
+  console.log(response)
+  if (!response.ok) throw new Error("Failed to fetch collection randomly");
+  return response.json();
 };
+
 
 // Create a telemetry entry
-export const createTelemetry = async (eventType: string, userId: number, additionalInfo?: string) => {
-    try {
-        const response = await axios.post(`http://localhost:3000/telemetry`, {
-            eventType,
-            userId,
-            additionalInfo
-        });
-        return response.data;  // Return the created telemetry entry
-    } catch (error) {
-        console.error('Error creating telemetry entry:', error);
-        throw error;
-    }
+export const createTelemetry = async (data:{
+  eventType: string, userId: number, additionalInfo?: string}
+) => {
+  const response = await fetch(`http://localhost:3000/collection`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Failed to create telemetry");
+  }
+  const json = await response.json()
+  return json.data;
 };
+
+
+
+

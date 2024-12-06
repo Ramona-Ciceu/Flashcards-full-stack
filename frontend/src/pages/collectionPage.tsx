@@ -36,22 +36,17 @@ const CollectionPage: React.FC = () => {
       alert("Please provide a title for the collection.");
       return;
     }
-   const title = 'My Collection'; // Example title
-    const setId = 1; // Example setId
-    const userId = 1; // Example userId (usually the logged-in user's ID)
-    const comment = 'This is a comment'; // Example comment
-
     const requestBody = {
-        title,
-        setId,
-        userId,
-        comment
+        title: newCollectionName,
+        setId: 0,
+        userId: 0,
+        comment: "This is a comment",
     };
 
-    console.log('Request body:', requestBody); // Log the request body 
+    console.log('Request body:', requestBody); 
   
     try {
-      const newCollection = await createFlashcardCollection( newCollectionName);
+      const newCollection = await createFlashcardCollection( requestBody);
       setCollections([...collections, newCollection]);
       setNewCollectionName("");
     } catch (error) {

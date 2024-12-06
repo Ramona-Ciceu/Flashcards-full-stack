@@ -55,7 +55,8 @@ app.post('/login', async (req, res) => {
     });
 
     if (user && user.password === password) {
-      res.status(200).json({ user_id: user.id });
+      res.status(200).json({id: user.id, username: user.username });
+      console.log("Login successful");
     } else {
       res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -818,7 +819,7 @@ app.get('/collection', async (req: Request, res: Response) => {
   });
 /*
 POST /collection creates a new collection.
-It stores a title, userId, and description in the collection table.
+It stores a title, userId, setId and comment in the collection table.
 */
 
 app.post('/collection', async (req: Request, res: Response) => {
@@ -827,7 +828,7 @@ app.post('/collection', async (req: Request, res: Response) => {
   const { setId, userId, title, comment } = req.body;
 
   // Ensure the necessary fields are provided
-  if (!setId || !userId || !title || !comment) {
+  if (!title == null || !setId == null || !userId == null ||  !comment== null) {
      res.status(400).json({ message: 'setId, userId,comment and title are required' });
      return;
   }
@@ -842,14 +843,16 @@ app.post('/collection', async (req: Request, res: Response) => {
        res.status(404).json({ message: 'The flashcard set was not found' });
        return;
     }
+  
+    
 
     // Create the new collection
     const newCollection = await prisma.collection.create({
       data: {
         title,    
-        comment, 
         setId: Number(setId),
         userId: Number(userId),
+        comment, 
       },
       include: {
         set: true,
@@ -870,8 +873,8 @@ app.post('/collection', async (req: Request, res: Response) => {
 
 // POST endpoint to add a set to a collection
 app.post('/collections/:collectionId/sets', async (req: Request, res: Response) => {
-  const { collectionId } = req.params; // Get the collectionId from the URL
-  const { setId } = req.body; // Get the setId from the request body
+  const { collectionId } = req.params; 
+  const { setId } = req.body; 
 
   try {
     // Add the set to the collection by updating the collection record
@@ -879,7 +882,7 @@ app.post('/collections/:collectionId/sets', async (req: Request, res: Response) 
       where: { id: Number(collectionId) },
       data: {
         set: {
-          connect: { id: setId } // Assuming 'sets' is a relation field in the collection model
+          connect: { id: setId } 
         }
       }
     });

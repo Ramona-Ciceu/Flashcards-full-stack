@@ -14,6 +14,7 @@ const HomePage: React.FC = () => {
   };
 
   return (
+    
     <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100">
       <h1 className="text-4xl font-bold mb-6">Welcome to TestVar Flashcards</h1>
       <p className="text-lg mb-6">Create your own flashcard sets and collections!</p>

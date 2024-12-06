@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createUser } from '../utils/api'; // Import the createUser function
+import { createUser } from '../utils/api'; 
 
 const SignupPage: React.FC = () => {
   const [username, setUsername] = useState('');
