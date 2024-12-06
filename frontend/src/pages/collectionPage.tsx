@@ -36,11 +36,19 @@ const CollectionPage: React.FC = () => {
       alert("Please provide a title for the collection.");
       return;
     }
-  
-    // Replace these with actual values from your application
-    const comment = "New collection comment"; // Or get it from user input
-    const setId = selectedSetId || 0; // Ensure a valid setId is provided
-    const userId = localStorage.getItem('token') || '' 
+   const title = 'My Collection'; // Example title
+    const setId = 1; // Example setId
+    const userId = 1; // Example userId (usually the logged-in user's ID)
+    const comment = 'This is a comment'; // Example comment
+
+    const requestBody = {
+        title,
+        setId,
+        userId,
+        comment
+    };
+
+    console.log('Request body:', requestBody); // Log the request body 
   
     try {
       const newCollection = await createFlashcardCollection( newCollectionName);
