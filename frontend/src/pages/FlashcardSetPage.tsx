@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { updateSet, deleteSet, createSet, createFlashcard, fetchSets, fetchFlashcardSet, deleteFlashcardSet ,updateFlashcardSet} from "../utils/api";
+import { fetchUser, updateSet, deleteSet, createSet, createFlashcard, fetchSets, fetchFlashcardSet, deleteFlashcardSet ,updateFlashcardSet} from "../utils/api";
 import { Sets, Flashcard } from "../Types/type";
 
 
@@ -20,8 +20,10 @@ const FlashcardSetPage: React.FC = () => {
   const [loaded, setLoaded] = useState<boolean>(false);
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
+    
     async function LoadFlashcardSets() {
       if (!loaded) {
         const data = await fetchSets();
@@ -148,9 +150,83 @@ const FlashcardSetPage: React.FC = () => {
           Create Set
         </button>
       </div>
-
+{/* Manage Sets */}
+<div className="mt-6">
+  <h3 className="font-bold text-lg mb-4">Manage Sets:</h3>
+  <table className="table-auto w-full bg-white rounded-lg shadow-lg">
+    <thead>
+      <tr className="bg-gray-200">
+        <th className="text-left p-2 border">Set Name</th>
+        <th className="p-2 border">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {sets.map((set) => (
+        <tr key={set.id} className="hover:bg-gray-100">
+          <td className="p-2 border">
+            {editingSetId === set.id ? (
+              <input
+                type="text"
+                value={newSetName}
+                onChange={(e) => setNewSetName(e.target.value)}
+                className="p-1 border rounded w-full"
+              />
+            ) : (
+              set.name
+            )}
+          </td>
+          <td className="p-2 border text-center">
+            {editingSetId === set.id ? (
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      const updatedSet = await updateSet(set.id, { name: newSetName });
+                      setSets(sets.map((s) => (s.id === set.id ? updatedSet : s)));
+                      setEditingSetId(null);
+                      setNewSetName("");
+                    } catch (error) {
+                      alert("Error updating set.");
+                    }
+                  }}
+                  className="text-sm bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setEditingSetId(null)}
+                  className="text-sm bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditingSetId(set.id);
+                    setNewSetName(set.name);
+                  }}
+                  className="text-sm bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteSet(set.id)}
+                  className="text-sm bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
       {/* Flashcard Set Selection */}
-      <div>
+      <div className="mt-6">
         <h3>Select a Set to Add Flashcards or to display Sets:</h3>
         <select
           value={selectedSetId || ""}
@@ -168,8 +244,10 @@ const FlashcardSetPage: React.FC = () => {
         </select>
       </div>
 
+
+
       {/* Create Flashcard Section */}
-      <div>
+      <div className="mt-8">
         {selectedSetId && (
           <div>
             <input
@@ -201,7 +279,7 @@ const FlashcardSetPage: React.FC = () => {
       </div>
 
       {/* Display Flashcards for the Selected Set */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {flashcards
           .filter((card) => card.setId === selectedSetId)
           .map((card) => (

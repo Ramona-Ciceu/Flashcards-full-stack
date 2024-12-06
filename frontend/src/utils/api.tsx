@@ -221,12 +221,14 @@ export async function addSetToCollection(collectionId: number, setId: number) {
 }
 
 // Create a new flashcard set collection
-export const createFlashcardCollection = async ( title?: string) => {
+export const createFlashcardCollection = async (title?: string, setId?: number, userId?: number, comment?: string) => {
     try {
         const response = await axios.post(`http://localhost:3000/collection`, {
-           
-          
+        
             title,
+            setId,  
+            userId, 
+            comment 
            
         });
         return response.data;  // Return the newly created collection data

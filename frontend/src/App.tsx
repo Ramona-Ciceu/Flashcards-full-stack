@@ -6,19 +6,26 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import FlashcardSetPage from "./pages/FlashcardSetPage";
 import CollectionPage from "./pages/collectionPage";
+import Navbar from "./pages/Navbar";
+
 
 
 
 const App: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/" element={<HomePage />} />
-        <Route path="/flashcard-sets" element={<FlashcardSetPage />} />
-        <Route path="/collections" element={<CollectionPage />} />
-      </Routes>
+      {/* Navbar appears on every page */}
+      <Navbar />
+      {/* Main content area */}
+      <div className="p-4">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/flashcard-sets" element={<FlashcardSetPage />} />
+          <Route path="/collections" element={<CollectionPage />} />
+        </Routes>
+      </div>
     </Router>
   );
 };
