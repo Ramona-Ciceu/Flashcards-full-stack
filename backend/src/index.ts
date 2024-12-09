@@ -32,8 +32,8 @@ const SECRET_KEY = 'your_secret_key';
 
 //Checking health enpoints
 app.get('/', (req: Request, res: Response) => {
-  console.log('Root route hit');
-  res.status(200).send('Server is working');
+ 
+  res.status(200).send('The active API version');
 });
 
  // Log incoming requests for debugging
@@ -81,7 +81,7 @@ app.post('/signup', async (req: Request, res: Response): Promise<void> => {
   } catch (error) {
     res.status(500).json({ error: 'User could not be created' });
   }
-});
+}); 
         
 // ===========================
 // Flashcard Set Routes
