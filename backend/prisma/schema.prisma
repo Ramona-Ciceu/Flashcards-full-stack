@@ -9,17 +9,19 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL") 
 }
+
 model Set {
-  id          Int        @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   name        String
   userId      Int
-  dailySetLimit Int  @default(20)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  dailySetLimit Int       @default(20)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   flashcards  Flashcard[]
-  collections Collection[]
-  comments     Comment[]
-  user        User       @relation(fields: [userId], references: [id])
+  collectionId Int?       // Optional reference to a Collection
+  collection  Collection? @relation(fields: [collectionId], references: [id])
+  comments    Comment[]
+  user        User        @relation(fields: [userId], references: [id])
 }
 
 model Flashcard {
@@ -46,17 +48,14 @@ model User {
 }
 
 model Collection {
-  id      Int  @id @default(autoincrement())
-  title  String
-  comment    String
-  userId  Int
-  setId   Int
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  user    User  @relation(fields: [userId], references: [id])
-  set     Set   @relation(fields: [setId], references: [id])
- 
-  
+  id          Int         @id @default(autoincrement())
+  title       String
+  comment     String
+  userId      Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id])
+  sets        Set[]       // One-to-Many with Set
 }
 
 

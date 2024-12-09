@@ -11,6 +11,8 @@ export interface Flashcard {
 export interface Sets {
   id: number;
   name: string;
+  collectionId: number;
+
 }
 
   export interface FlashcardSetPageProps {
@@ -36,6 +38,6 @@ export interface Sets {
     comment: string;
     createdAt:string;
     updatedAt:string
-    sets?:Sets[]
+    set?:Sets[]
   }
   

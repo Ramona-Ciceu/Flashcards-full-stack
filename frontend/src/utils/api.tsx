@@ -161,12 +161,16 @@ export const createUser = async (data: {
   username: string;
   password: string;
   role: string; }) => {
-  const response = await fetch(`http://localhost:3000/user`, {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
-  const json = await response.json()
-  return json.data;
+    const response = await fetch(`http://localhost:3000/user`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+    console.log(response)
+    const json = await response.json()
+    return json;
 };
 
 
@@ -278,7 +282,6 @@ export const deleteFlashcardCollection = async (collectionId: number) => {
 // Get all flashcard collections
 export const getAllFlashcardCollections = async () => {
   const response = await fetch("http://localhost:3000/collection", { method: "GET"});
-  console.log(response)
   if (!response.ok) throw new Error("Failed to fetch collection");
   return response.json();
 };
@@ -296,7 +299,7 @@ export const getRandomFlashcardCollection = async () => {
 export const createTelemetry = async (data:{
   eventType: string, userId: number, additionalInfo?: string}
 ) => {
-  const response = await fetch(`http://localhost:3000/collection`, {
+  const response = await fetch(`http://localhost:3000/telemetry`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

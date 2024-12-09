@@ -16,21 +16,24 @@ const LoginPage: React.FC = () => {
         password,
       });
 
-      localStorage.setItem("username", response.data.user.username);
+      console.log(response)
+
+      localStorage.setItem("username", response.data.username);
     
 
       console.log(response)
       console.log(response.data.user_id)
 
       // If the response contains a token, login is successful
-      if (response.data.user_id) {
-        localStorage.setItem('token', response.data.user_id); // Store the token
+      if (response.data.id) {
+        localStorage.setItem('token', response.data.id); // Store the token
         alert('Login successful!');
         navigate('/HomePage'); // Navigate to the home page
       } else {
         setErrorMessage('Invalid credentials.');
       }
     } catch (error) {
+      console.log(error)
       setErrorMessage('An error occurred during login. Please try again.');
     }
   };

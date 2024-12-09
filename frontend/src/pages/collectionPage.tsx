@@ -22,6 +22,7 @@ const CollectionPage: React.FC = () => {
     async function loadCollectionsAndSets() {
       if (!loaded) {
         const collectionsData = await getAllFlashcardCollections();
+        console.log(collectionsData)
         const setsData = await fetchSets();
         setCollections(collectionsData);
         setSets(setsData);
@@ -36,10 +37,12 @@ const CollectionPage: React.FC = () => {
       alert("Please provide a title for the collection.");
       return;
     }
+
+    const userId = localStorage.getItem('token')
     const requestBody = {
         title: newCollectionName,
-        setId: 0,
-        userId: 0,
+        setId: selectedSetId || 0,
+        userId: Number(userId) || 0,
         comment: "This is a comment",
     };
 
@@ -47,14 +50,24 @@ const CollectionPage: React.FC = () => {
   
     try {
       const newCollection = await createFlashcardCollection( requestBody);
-      setCollections([...collections, newCollection]);
+      const updatedNewCollection = {
+        ...newCollection,
+        sets: selectedSetId
+          ? [sets.find((set) => set.id === selectedSetId)!]
+          : [],
+      };
+      setCollections([...collections, updatedNewCollection]);
+      
       setNewCollectionName("");
+      setSelectedSetId(null); // Reset the selected set
     } catch (error) {
       alert("Error creating collection.");
     }
   };
   
+  
   const handleAddSetToCollection = async () => {
+    console.log(collections)
     if (!selectedCollectionId || !selectedSetId) {
       alert("Please select a collection and a set.");
       return;
@@ -66,7 +79,7 @@ const CollectionPage: React.FC = () => {
       setCollections((prevCollections) =>
         prevCollections.map((collection) =>
           collection.id === selectedCollectionId
-            ? { ...collection, sets: [...(collection.sets || []), sets.find((s) => s.id === selectedSetId)!] }
+            ? { ...collection, sets: [...(collection.set || []), sets.find((s) => s.id === selectedSetId)!] }
             : collection
         )
       );
@@ -99,6 +112,18 @@ const CollectionPage: React.FC = () => {
           onChange={(e) => setNewCollectionName(e.target.value)}
           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <select
+    value={selectedSetId || ""}
+    onChange={(e) => setSelectedSetId(Number(e.target.value))}
+    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-3"
+  >
+    <option value="">Select a Set</option>
+    {sets.map((set) => (
+      <option key={set.id} value={set.id}>
+        {set.name}
+      </option>
+    ))}
+  </select>
         <button
           onClick={handleAddCollection}
           className="w-full bg-blue-500 text-white py-3 rounded-lg mt-3 font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -157,8 +182,8 @@ const CollectionPage: React.FC = () => {
             </button>
             <div className="mt-4">
               <h3 className="text-lg font-semibold">Sets in this Collection:</h3>
-              {collection.sets?.length ? (
-                collection.sets.map((set) => <p key={set.id}>{set.name}</p>)
+              {collection.set?.length ? (
+                collection.set.map((set) => <p key={set.id}>{set.name}</p>)
               ) : (
                 <p>No sets added yet.</p>
               )}

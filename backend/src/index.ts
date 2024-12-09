@@ -408,7 +408,7 @@ const validateUserInput = (req: Request, res: Response, next: NextFunction): voi
 
     //Check for missing fields
     if (!username || !password ||  !role ) {
-         res.status(400).json({ error: 'All fields are required: username, password, email, role, firstName, lastName.' });
+         res.status(400).json({ error: 'All fields are required: username, password, or role.' });
          return;
     }
 
@@ -452,7 +452,7 @@ On failure, it logs the error and returns a 400 status with an error message.
 // Route to create a new user
 // app.post('/user',validateUserInput, hashPassword, async (req: Request, res: Response) => {
 app.post('/user',validateUserInput, async (req: Request, res: Response) => {
-    const { username, password,  role, } = req.body;
+    const { username, password,  role, } = await req.body;
     console.log('Create user called')
 
     try {
@@ -658,10 +658,10 @@ app.get('/user/:userId/collection', async (req: Request, res: Response) => {
         where: {
             // 'userId' is a foreign key in the collection model
             userId: numericUserId,
-            setId: Number (setId)
+         
         },
         include:{
-            set: true,
+            sets: true,
         }
       });
   
@@ -696,7 +696,7 @@ app.get('/user/:userId/collection/:collectionId', async (req: Request, res: Resp
                 userId: parsedUserId,
             },
             include: {
-                set: true,
+                sets: true,
                 user: true,
             },
         });
@@ -742,11 +742,11 @@ app.put('/collection/:id', async (req: Request, res: Response) => {
       data: {
         title: title, 
         userId: userId ? Number(userId) : undefined,
-        setId: setId ? Number(setId) : undefined,
+        id : setId ? Number(setId) : undefined,
         comment: comment, 
       },
       include: {
-        set: true,
+        sets: true,
         user: true,
       },
     });
@@ -801,11 +801,12 @@ app.get('/collection', async (req: Request, res: Response) => {
       // Retrieve all collections with associated set, user, and comment
       const collections = await prisma.collection.findMany({
         include: {
-          set: true,     
-          user: true,    
-         
+          sets: true,     
+          user: true,
         },
       });
+
+      console.log(collections)
   
       // Respond with the list of collections
        res.status(200).json(collections);
@@ -825,40 +826,40 @@ It stores a title, userId, setId and comment in the collection table.
 app.post('/collection', async (req: Request, res: Response) => {
   console.log('Collection route hit');
   console.log(req.body)
-  const { setId, userId, title, comment } = req.body;
+  const { setId, userId, title, comment, sets } = req.body;
 
   // Ensure the necessary fields are provided
-  if (!title == null || !setId == null || !userId == null ||  !comment== null) {
-     res.status(400).json({ message: 'setId, userId,comment and title are required' });
+  if (!title == null || !setId == null || !userId == null ||  !comment || sets && !Array.isArray(sets)) {
+     res.status(400).json({ message: 'setId, userId,comment,sets and title are required' });
      return;
   }
 
   try {
-    // Check if the flashcard set exists
-    const flashcardSet = await prisma.set.findUnique({
-      where: { id: Number(setId) },
-    });
-
-    if (!flashcardSet) {
-       res.status(404).json({ message: 'The flashcard set was not found' });
-       return;
-    }
-  
     
+    if (setId) {
+      const flashcardSet = await prisma.set.findUnique({
+        where: { id: Number(setId) },
+      });
 
-    // Create the new collection
-    const newCollection = await prisma.collection.create({
-      data: {
-        title,    
-        setId: Number(setId),
-        userId: Number(userId),
-        comment, 
-      },
-      include: {
-        set: true,
-        user: true,
-      },
-    });
+      if (!flashcardSet) {
+        res.status(404).json({ message: 'The flashcard set was not found' });
+        return;
+      }
+    }
+    
+  // Create the new collection with optional sets
+  const newCollection = await prisma.collection.create({
+    data: {
+      title,
+      comment,
+      userId: Number(userId),
+      id:  Number(setId) ,
+    },
+    include: {
+      sets: true,
+      user: true,
+    },
+  });
 
     // Return the created collection
     res.status(201).json(newCollection);
@@ -866,7 +867,7 @@ app.post('/collection', async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error'});
     return;
   }
 });
@@ -881,9 +882,12 @@ app.post('/collections/:collectionId/sets', async (req: Request, res: Response) 
     const updatedCollection = await prisma.collection.update({
       where: { id: Number(collectionId) },
       data: {
-        set: {
-          connect: { id: setId } 
+        sets: {
+          connect: { id: parseInt(setId) } 
         }
+      },
+      include: {
+        sets: true
       }
     });
 
