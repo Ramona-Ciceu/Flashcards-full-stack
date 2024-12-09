@@ -361,10 +361,15 @@ app.post('/set/:id/comments', async (req: Request, res: Response) => {
         rating,
         comments,
       },
+      include:{
+        set:true,
+        user:true,
+      }
     });
 
     res.status(201).json(comment);
-    console.log('Comment created');
+    console.log('Comment created', comment);
+   
   } catch (error) {
     console.error(error);
     if (error instanceof Error && error.message.includes('P2025')) {

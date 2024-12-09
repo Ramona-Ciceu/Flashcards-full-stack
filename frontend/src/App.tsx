@@ -10,7 +10,6 @@ import Navbar from "./pages/Navbar";
 
 
 
-
 const App: React.FC = () => {
   return (
     <Router>
@@ -19,6 +18,7 @@ const App: React.FC = () => {
       {/* Main content area */}
       <div className="p-4">
         <Routes>
+          <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/HomePage" element={<HomePage />} />

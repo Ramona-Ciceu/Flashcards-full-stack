@@ -11,7 +11,7 @@ export interface Flashcard {
 export interface Sets {
   id: number;
   name: string;
-  collection?:Collection[];
+  collectionId: number;
 
 }
 
@@ -29,7 +29,7 @@ export interface Sets {
   export interface User {
     id: number;
     username: string;
-    email: string;
+    
   }
   
   export interface Collection {

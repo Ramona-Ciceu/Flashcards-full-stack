@@ -20,16 +20,15 @@ but after that i've only ran "npm install vite"
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
 npm install react-router-dom
-
 npm install axios
-
 npm install --save-dev @types/jest
 
 
 
-To run the app,always use: npm run start:dev
+To run the app,always use: npm run dev
 
 To generate database will ne to run : npx prisma generate.
 
 Unable to use Difficulty enum : error: Error validating: You defined the enum `Difficulty`. The current connector does not support enums. Will use difficulty as a string attribute in flashcard table. 
 
+I had axios but because of it my frontend  wasnt connecting properly with the backend, so ive decided to remove it. 

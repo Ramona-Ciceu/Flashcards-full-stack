@@ -48,12 +48,29 @@ export const deleteSet = async (id: number) => {
   if (!response.ok) throw new Error("Failed to delete set");
 };
 
-// Example: Create comments for a specific set
-export const createCommentsBySetId = async (id: number) => {
-  const response = await fetch(`http://localhost:3000/set/${id}/comments`, { method: "POST"});
-  const json = await response.json()
-  return json.data;
+export const createCommentsBySetId = async (id: number, rating: number, comments: string, userId: number) => {
+  const response = await fetch(`http://localhost:3000/set/${id}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      rating,
+      comments,
+      userId,
+    }),
+  });
+
+  if (!response.ok) {
+    // Handle error cases (e.g., invalid input, server issues)
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to create comment");
+  }
+
+  const json = await response.json();
+  return json; // Return the entire response to access all fields
 };
+
 
 //
 // FLASHCARD SET CALLS
@@ -110,16 +127,7 @@ export const deleteFlashcardSet = async (setId: number, flashcardId: number) => 
 //
 // USER CALLS
 //
-/* Sign-up user
-export const signupUser = async (data: { username: string, password: string, role: string }) => {
-  
-    const response = await fetch('http://localhost:3000/signup',{
-      method: "POST"
-  } );
-    const json = await response.json()
-    return json.data;
-};
-*/
+
 //Login user
 export const loginUser = async (username: string, password: string) => {
   const response = await fetch(`http://localhost:3000/user/login`, {
