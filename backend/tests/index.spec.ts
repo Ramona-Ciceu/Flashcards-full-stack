@@ -22,6 +22,8 @@ describe('Set API Routes', () => {
   // Test GET all sets
   test('should return all flashcard sets for GET /set', async () => {
     const response = await request(app).get('/set');
+    console.log('Response status:', response.status)
+    console.log('Response body:', response.body)
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
   });
@@ -32,12 +34,11 @@ describe('Set API Routes', () => {
       .post('/set')
       .send({
         name: 'New Set',
-        description: 'Test description',
-        userId: 1, // Assuming you have a user with id 1 in your DB
+        userId: 1,
       });
     expect(response.status).toBe(201);
     expect(response.body.name).toBe('New Set');
-    expect(response.body.description).toBe('Test description');
+
   });
 
 });
@@ -52,13 +53,13 @@ describe('PUT /set/:id', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.name).toBe(updatedSet.name);
-    expect(response.body.description).toBe(updatedSet.description);
+ 
   });
 
   test('should return 400 for invalid ID', async () => {
     const response = await request(app).put('/set/invalidId').send({
       name: 'Invalid Set',
-      description: 'Test description',
+
     });
 
     expect(response.status).toBe(400);

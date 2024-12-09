@@ -23,6 +23,7 @@ app.use(express.json());
 app.use(cors()); 
 // Creating an instance of PrismaClient to interact with the database.
 const prisma = new PrismaClient();
+
 const SECRET_KEY = 'your_secret_key';
 
  
@@ -92,16 +93,16 @@ app.post('/signup', async (req: Request, res: Response): Promise<void> => {
   try {
     const sets = await prisma.set.findMany({
       select: { name: true, id: true, userId: true },
+     
     });
 
     if (sets.length === 0) {
        res.status(404).json({ error: 'No sets found.' });
        return;
     }
-
     res.status(200).json(sets);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching sets:',error);
     res.status(500).json({ error: 'Error fetching sets.' });
   }
 });
@@ -340,7 +341,7 @@ app.post('/set/:id/comments', async (req: Request, res: Response) => {
   
   // Validate input
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    res.status(400).json({ error: 'Rating must be an integer between 1 and 5' });
+    res.status(400).json({ error: 'Rating must be between 1 and 5' });
     return;
   }
   

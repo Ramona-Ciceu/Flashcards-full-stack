@@ -11,12 +11,12 @@ export interface Flashcard {
 export interface Sets {
   id: number;
   name: string;
-  collectionId: number;
+  collection?:Collection[];
 
 }
 
   export interface FlashcardSetPageProps {
-    setId: number; // Define the type for setId as number
+    setId: number; 
   }
   
   
