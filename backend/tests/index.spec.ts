@@ -13,14 +13,14 @@ jest.mock('@prisma/client');
 
 describe('Set API Routes', () => {
 
-  test('should return active API version for GET /', async () => {
+  it('should return active API version for GET /', async () => {
     const response = await request(app).get('/');
     expect(response.status).toBe(200);
     expect(response.text).toBe('The active API version');
   });
 
   // Test GET all sets
-  test('should return all flashcard sets for GET /set', async () => {
+  it('should return all flashcard sets for GET /set', async () => {
     const response = await request(app).get('/set');
     console.log('Response status:', response.status)
     console.log('Response body:', response.body)
@@ -168,9 +168,7 @@ describe('POST /set/:id/flashcard', () => {
       solution: '4',
       difficulty: 'unknown',  // Invalid difficulty
     };
-
     const response = await request(app).post('/set/:id/flashcard').send(flashcardData);
-
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid difficulty. Valid values are "easy", "medium", "hard".');
   });
@@ -184,7 +182,6 @@ describe('POST /set/:id/flashcard', () => {
     };
 
     const response = await request(app).post('/set/:id/flashcard').send(flashcardData);
-
     expect(response.status).toBe(404);
     expect(response.body.error).toBe('Set not found');
   });
@@ -208,12 +205,19 @@ describe('User API Routes', () => {
     expect(response.text).toBe('The active API version');
   });
 
-  // Test GET all user
-  test('should return all flashcard sets for GET /user', async () => {
+  test('should return all users for GET /user', async () => {
+    (prisma.user.findMany as jest.Mock).mockResolvedValue([
+      { id: 1, username: 'testuser', role: 'user' },
+    ]);
+  
     const response = await request(app).get('/user');
+  
     expect(response.status).toBe(200);
-    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toEqual([
+      { id: 1, username: 'testuser', role: 'user' },
+    ]);
   });
+  
 
   // Test POST create a user
   describe('POST /user', () => {

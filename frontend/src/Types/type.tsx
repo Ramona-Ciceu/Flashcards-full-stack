@@ -13,7 +13,7 @@ export interface Sets {
   name: string;
   collectionId: number;
 
-}
+} 
 
   export interface FlashcardSetPageProps {
     setId: number; 

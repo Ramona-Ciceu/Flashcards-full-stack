@@ -1,88 +1,111 @@
+// src/utils/api.test.tsx
+
 import axios from 'axios';
-import { describe, it, beforeAll, afterAll, expect, afterEach } from '@jest/globals';
-import { fetchSets, createSet, fetchSetById, updateSet, deleteSet } from '../utils/api';  
+import MockAdapter from 'axios-mock-adapter';
+import { fetchSets, createSet, fetchSetById, updateSet, deleteSet, createCommentsBySetId } from '../utils/api'; 
 
-// Mock the axios module
-jest.mock('axios');
+describe('API Utility Functions', () => {
+  let mock: MockAdapter;
 
-describe('API Calls', () => {
-
-  afterEach(() => {
-    jest.clearAllMocks();  // Clear mocks after each test
+  beforeAll(() => {
+    mock = new MockAdapter(axios);
   });
 
-  test('should fetch all sets', async () => {
-    const mockResponse = [
-      { id: 1, name: 'Flashcards Set 1' },
-      { id: 2, name: 'Flashcards Set 2' },
-    ];
-    
-    // Mock the axios GET request
-    (axios.get as jest.Mock).mockResolvedValue({ data: mockResponse });
+  afterAll(() => {
+    mock.restore();
+  });
 
-    // Call the fetchSets function
-    const response = await fetchSets();
+  test('fetchSets should fetch all sets', async () => {
+    const sets = [{ id: 1, name: 'Test Set' }];
+    mock.onGet('/set').reply(200, sets);
 
-    // Assert the response
-    expect(response).toEqual(mockResponse);
+    const data = await fetchSets();
+
+    expect(data).toEqual(sets);
     expect(axios.get).toHaveBeenCalledWith('/set');
   });
 
-  test('should create a new set', async () => {
-    const newSet = { name: 'New Set', userId: '3' };
-    const mockResponse = { id: 3, name: 'New Set', userId:3 };
+  test('createSet should create a new set', async () => {
+    const newSet = { name: 'New Set', userId: '123' };
+    mock.onPost('/set').reply(201, newSet);
 
-    // Mock the axios POST request
-    (axios.post as jest.Mock).mockResolvedValue({ data: mockResponse });
+    const data = await createSet(newSet);
 
-    // Call the createSet function
-    const response = await createSet(newSet);
-
-    // Assert the response
-    expect(response).toEqual(mockResponse);
-    expect(axios.post).toHaveBeenCalledWith('/set', newSet);
+    expect(data).toEqual(newSet);
+    expect(axios.post).toHaveBeenCalledWith('/set', newSet, { headers: { "Content-Type": "application/json" } });
   });
 
-  test('should fetch a specific set by ID', async () => {
-    const mockData = { id: 1, name: 'Flashcards Set 1' };
+  test('fetchSetById should fetch a set by ID', async () => {
+    const set = { id: 1, name: 'Test Set' };
+    mock.onGet('/set/1').reply(200, { data: set });
 
-    // Mock the axios GET request
-    (axios.get as jest.Mock).mockResolvedValue({ data: mockData });
+    const data = await fetchSetById(1);
 
-    // Call the fetchSetById function
-    const response = await fetchSetById(1);
-
-    // Assert the response
-    expect(response).toEqual(mockData);
+    expect(data).toEqual(set);
     expect(axios.get).toHaveBeenCalledWith('/set/1');
   });
 
-  test('should update an existing set', async () => {
-    const updatedData = { name: 'Updated Set', description: 'New description' };
-    const mockResponse = { id: 1, name: 'Updated Set', description: 'New description' };
+  test('updateSet should update an existing set', async () => {
+    const updates = { name: 'Updated Set' };
+    mock.onPut('/set/1').reply(200, updates);
 
-    // Mock the axios PUT request
-    (axios.put as jest.Mock).mockResolvedValue({ data: mockResponse });
+    const data = await updateSet(1, updates);
 
-    // Call the updateSet function
-    const response = await updateSet(1, updatedData);
-
-    // Assert the response
-    expect(response).toEqual(mockResponse);
-    expect(axios.put).toHaveBeenCalledWith('/set/1', updatedData);
+    expect(data).toEqual(updates);
+    expect(axios.put).toHaveBeenCalledWith('/set/1', updates, { headers: { "Content-Type": "application/json" } });
   });
 
-  test('should delete a set', async () => {
-    const mockResponse = { message: 'Deleted successfully' };
+  test('deleteSet should delete a set', async () => {
+    mock.onDelete('/set/1').reply(204);
 
-    // Mock the axios DELETE request
-    (axios.delete as jest.Mock).mockResolvedValue({ data: mockResponse });
+    await deleteSet(1);
 
-    // Call the deleteSet function
-    const response = await deleteSet(1);
-
-    // Assert the response
-    expect(response).toEqual(mockResponse);
     expect(axios.delete).toHaveBeenCalledWith('/set/1');
+  });
+
+  test('createCommentsBySetId should create a comment', async () => {
+    const comment = { rating: 5, comments: 'Great set!', userId: 123 };
+    mock.onPost('/set/1/comments').reply(201, comment);
+
+    const data = await createCommentsBySetId(1, comment.rating, comment.comments, comment.userId);
+
+    expect(data).toEqual(comment);
+    expect(axios.post).toHaveBeenCalledWith('/set/1/comments', comment, { headers: { "Content-Type": "application/json" } });
+  });
+
+  test('fetchSets should handle errors', async () => {
+    mock.onGet('/set').reply(500);
+
+    await expect(fetchSets()).rejects.toThrow('Request failed with status code 500');
+  });
+
+  test('createSet should handle errors', async () => {
+    mock.onPost('/set').reply(400, { error: 'Invalid data' });
+
+    await expect(createSet({ name: '', userId: '' })).rejects.toThrow('Invalid data');
+  });
+
+  test('fetchSetById should handle errors', async () => {
+    mock.onGet('/set/1').reply(404, { error: 'Set not found' });
+
+    await expect(fetchSetById(1)).rejects.toThrow('Set not found');
+  });
+
+  test('updateSet should handle errors', async () => {
+    mock.onPut('/set/1').reply(400, { error: 'Invalid data' });
+
+    await expect(updateSet(1, { name: '' })).rejects.toThrow('Invalid data');
+  });
+
+  test('deleteSet should handle errors', async () => {
+    mock.onDelete('/set/1').reply(404, { error: 'Set not found' });
+
+    await expect(deleteSet(1)).rejects.toThrow('Set not found');
+  });
+
+  test('createCommentsBySetId should handle errors', async () => {
+    mock.onPost('/set/1/comments').reply(400, { error: 'Invalid input' });
+
+    await expect(createCommentsBySetId(1, 5, '', 123)).rejects.toThrow('Invalid input');
   });
 });

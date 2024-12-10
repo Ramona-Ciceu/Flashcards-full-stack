@@ -1,19 +1,25 @@
 //frontend/src/utils/api.tsx
 import axios from 'axios';
 import { Flashcard, Sets} from "../Types/type";
+import { error } from 'console';
 
 //
 // SET CALLS
 //
 //Fetch all the flashcards sets
 export const fetchSets = async () => {
+  try{
   const response = await fetch("http://localhost:3000/set", { method: "GET"});
   console.log(response)
   if (!response.ok) throw new Error("Failed to fetch sets");
   return response.json();
+  } catch (error){
+    console.error("fetchSets Error:", error);
+  }
 };
 //Create a new flashcard set
 export const createSet = async (set: { name: string; userId: string }) => {
+  try {
   const response = await fetch("http://localhost:3000/set", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -22,17 +28,25 @@ export const createSet = async (set: { name: string; userId: string }) => {
   console.log(response)
   if (!response.ok) throw new Error("Failed to create set");
   return response.json();
+} catch(error) {
+ console.error("createSet Error", error)
+}
 };
 
 //Fetch a specific set by ID
 export const fetchSetById = async (id: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/set/${id}`, { method: "GET"});
   const json = await response.json();
   return json.data
+  } catch (errro){
+    console.error("fetchSetById error", error);
+  }
 };
 
 // Update an existing flashcard set by ID
 export const updateSet = async (id: number, updates: { name: string;  }) => {
+  try{
   const response = await fetch(`http://localhost:3000/set/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -40,15 +54,23 @@ export const updateSet = async (id: number, updates: { name: string;  }) => {
   });
   if (!response.ok) throw new Error("Failed to update set");
   return response.json();
+} catch (error){
+  console.error("updateSet error", error)
+}
 };
 
 // Delete a flashcard set by ID
 export const deleteSet = async (id: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/set/${id}`, { method: "DELETE" });
   if (!response.ok) throw new Error("Failed to delete set");
+  } catch(error){
+    console.error("deleteSet error", error)
+  }
 };
 
 export const createCommentsBySetId = async (id: number, rating: number, comments: string, userId: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/set/${id}/comments`, {
     method: "POST",
     headers: {
@@ -69,6 +91,9 @@ export const createCommentsBySetId = async (id: number, rating: number, comments
 
   const json = await response.json();
   return json; // Return the entire response to access all fields
+} catch (error){
+  console.error("createCommentsbySetId error", error)
+}
 };
 
 
@@ -77,9 +102,13 @@ export const createCommentsBySetId = async (id: number, rating: number, comments
 //
 //Get flashcards by set ID
 export const fetchFlashcardSet = async (id: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/set/${id}/flashcard`, { method: "GET"});
   if (!response.ok) throw new Error("Failed to fetch flashcards");
   return response.json();
+  } catch(error){
+    console.error("fetchFlashcardSet error", error)
+  }
 };
 
 // Create a new flashcard
@@ -88,7 +117,9 @@ export const createFlashcard = async (id: number, flashcard: {
   solution: string; 
   difficulty: string; 
 }) => {
+  try{
   const response = await fetch(`http://localhost:3000/set/${id}/flashcard`, {
+   
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -102,26 +133,37 @@ export const createFlashcard = async (id: number, flashcard: {
     throw new Error("Failed to create flashcard");
   }
   return response.json();
+} catch(error){
+  console.error("createFlashcard error", error)
+}
 };
 
 
 // Update flashcard set byt flashcard id
 export const updateFlashcardSet = async (data: { setId: number; question: string; solution: string; difficulty: string; flashcardId: number; }) => {
+  try{
   const response = await fetch(`http://localhost:3000/set/${data.setId}/flashcard/${data.flashcardId}`, {
     method: "PUT",
     body: JSON.stringify(data)
   });
   const json = await response.json()
   return json.data
+} catch(error){
+  console.error("updateFlashcardSet error", error)
+}
 };
 
 // Delete flashcard set by flashcard id
 export const deleteFlashcardSet = async (setId: number, flashcardId: number) => {
+ try{
   const response = await fetch(`http://localhost:3000/set/${setId}/flashcard/${flashcardId}`, {
     method: "DELETE"
   });
   const json = await response.json()
   return json.data;
+} catch (error){
+  console.error("deleteFlashcardSet error", error)
+}
 };
 
 //
@@ -130,6 +172,7 @@ export const deleteFlashcardSet = async (setId: number, flashcardId: number) => 
 
 //Login user
 export const loginUser = async (username: string, password: string) => {
+  try{
   const response = await fetch(`http://localhost:3000/user/login`, {
     method: "POST",
     headers: {
@@ -143,25 +186,36 @@ export const loginUser = async (username: string, password: string) => {
   }
 
   return await response.json();
+} catch (error){
+  console.error("loginUser error", error)
+}
 };
 
 
 export const fetchUser = async () => {
+  try{
   const response = await fetch(`http://localhost:3000/user`, {
     method: "GET"
   });  
   const json = await response.json()
   return json.data;
+} catch (error){
+  console.error("fetchUser error", error)
+}
 };
 
 
 // Example: Fetch user details by user ID
 export const fetchUserById = async (id: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/user/${id}`, {
     method: "GET"
   });
   const json = await response.json()
   return json.data;
+} catch (error) {
+console.error("fetchUserById error", error)
+}
 };
 
 // Create a new user
@@ -169,6 +223,7 @@ export const createUser = async (data: {
   username: string;
   password: string;
   role: string; }) => {
+    try{
     const response = await fetch(`http://localhost:3000/user`, {
       method: "POST",
       headers: {
@@ -179,6 +234,9 @@ export const createUser = async (data: {
     console.log(response)
     const json = await response.json()
     return json;
+  } catch(error){
+    console.error("createUser error", error)
+  }
 };
 
 
@@ -189,30 +247,42 @@ export const updateUser = async (id: number, data: {
   password?: string;
   role?: string;
 }) => {
+  try{
   const response = await fetch(`http://localhost:3000/user/${id}`, {
     method: "PUT",
     body: JSON.stringify(data)
   });
   const json = await response.json()
   return json.data;
+} catch (error){
+  console.error("updateUser error", error)
+}
 };
 
 // Delete a user by ID
 export const deleteUser = async (id: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/user/${id}`, {
     method: "DELETE"
   });
   const json = await response.json()
   return json.data;
+} catch(error){
+  console.error("deleteUser error", error)
+}
 };
 
 // Get all flashcard sets by user ID
 export const fetchSetsByUser = async (userId: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/user/${userId}/set`, {
     method: "GET"
   });
   const json = await response.json()
-  return json.data;
+  return json.data;}
+  catch(error){
+    console.error("fetchSetsByUser error", error)
+  }
 };
 
 
@@ -221,38 +291,50 @@ export const fetchSetsByUser = async (userId: number) => {
 //
 //Get the collection by user id
 export const getFlashcardCollectionsByUser= async (userId: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/user/${userId}/collection`, {
     method: "GET"
   });
   const json = await response.json()
   return json.data;
+} catch(error){
+  console.error("getFlashcardCollectionsByUser error", error)
+}
 };
 
 
 // Get a flashcard set collection by ID
 export const getFlashcardCollectionById = async(userId: number, collectionId: number) => {
- 
+ try{
   const response = await fetch(`http://localhost:3000/user/${userId}/collection/${collectionId}`, {
     method: "GET"
   });
   const json = await response.json()
   return json.data;
+} catch(error){
+  console.error("getFlashcardCollectionById error", error)
+}
 };
 
 
 
 export async function addSetToCollection(collectionId: number, setId: number) {
+  try{
   await fetch(`http://localhost:3000/collections/${collectionId}/sets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ setId }),
   });
+}catch(error){
+  console.error("addSetToCollection error", error)
+}
 };
 
 // Create a new collection
 export const createFlashcardCollection = async ( collection:{
   title?: string, setId?: number, userId?: number, comment?: string}
 ) => {
+  try{
   const response = await fetch(`http://localhost:3000/collection`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -263,12 +345,16 @@ export const createFlashcardCollection = async ( collection:{
     throw new Error("Failed to create collection");
   }
   return response.json();
+} catch(error){
+  console.error("createFlashcardCollection error", error)
+}
 };
 
 // Update collection
 export const updateFlashcardCollection = async (
   collectionId: number, updates:{comment: string, title:string}
 ) => {
+  try{
   const response = await fetch(`http://localhost:3000/collection/${collectionId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -279,27 +365,42 @@ export const updateFlashcardCollection = async (
     throw new Error("Failed to update collection");
   }
   return response.json();
+} catch(error){
+  console.error("updateFlashcardCollection error", error)
+}
 };
 
 // Delete a flashcard collection by ID
 export const deleteFlashcardCollection = async (collectionId: number) => {
+  try{
   const response = await fetch(`http://localhost:3000/collection/${collectionId}`, { method: "DELETE" });
   if (!response.ok) throw new Error("Failed to delete collection");
+  } catch(erro){
+    console.error("deleteFlashcardCollection error", error);
+  }
 };
 
 // Get all flashcard collections
 export const getAllFlashcardCollections = async () => {
+  try{
   const response = await fetch("http://localhost:3000/collection", { method: "GET"});
   if (!response.ok) throw new Error("Failed to fetch collection");
   return response.json();
+  } catch(error){
+    console.error("getAllFlashcardCollections error", error)
+  }
 };
 
 // Get random flashcard collections
 export const getRandomFlashcardCollection = async () => {
+  try{
   const response = await fetch("http://localhost:3000/collection/random", { method: "GET"});
   console.log(response)
   if (!response.ok) throw new Error("Failed to fetch collection randomly");
   return response.json();
+  } catch(error){
+    console.error("getRandomFlashcardCollection error", error)
+  }
 };
 
 
@@ -307,6 +408,7 @@ export const getRandomFlashcardCollection = async () => {
 export const createTelemetry = async (data:{
   eventType: string, userId: number, additionalInfo?: string}
 ) => {
+  try{
   const response = await fetch(`http://localhost:3000/telemetry`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -318,6 +420,9 @@ export const createTelemetry = async (data:{
   }
   const json = await response.json()
   return json.data;
+} catch(error){
+  console.error("createTelemetry error", error)
+}
 };
 
 

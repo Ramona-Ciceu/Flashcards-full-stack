@@ -18,13 +18,16 @@ const app = express();
 
 //Defining the listening Port.
 const PORT = 3000;
+
+
+
 //Middleware to parse Json§
 app.use(express.json());
 app.use(cors()); 
 // Creating an instance of PrismaClient to interact with the database.
 const prisma = new PrismaClient();
 
-const SECRET_KEY = 'your_secret_key';
+//const SECRET_KEY = 'your_secret_key';
 
  
 // ===========================
@@ -95,15 +98,14 @@ app.post('/signup', async (req: Request, res: Response): Promise<void> => {
       select: { name: true, id: true, userId: true },
      
     });
-
-    if (sets.length === 0) {
-       res.status(404).json({ error: 'No sets found.' });
-       return;
+     if (sets.length === 0) {
+      res.status(404).json({ error: 'No sets found.' });
+      return;
     }
-    res.status(200).json(sets);
+  res.status(200).json(sets);
   } catch (error) {
-    console.error('Error fetching sets:',error);
-    res.status(500).json({ error: 'Error fetching sets.' });
+  console.error('Error fetching sets:',error);
+  res.status(500).json({ error: 'Error fetching sets.' });
   }
 });
 
@@ -215,6 +217,11 @@ app.delete('/set/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
+    const set = await prisma.set.findUnique({ where: { id: parseInt(id) } });
+    if (!set) {
+       res.status(404).json({ error: 'Set not found' });
+       return;
+    }
     await prisma.flashcard.deleteMany({ where: { setId: parseInt(id) } });
     await prisma.set.delete({ where: { id: parseInt(id) } });
 
@@ -956,4 +963,7 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   
 });
+
+
  export default app;
+
