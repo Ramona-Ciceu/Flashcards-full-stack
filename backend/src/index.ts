@@ -271,6 +271,18 @@ app.post('/set/:id/flashcard', async (req: Request, res: Response) => {
   const {  question, solution, difficulty } = req.body;
   const {id: setId} = req.params;
 
+  // Validate input
+  if (!question || !solution || !difficulty) {
+     res.status(400).json({ error: 'All fields (question, solution, difficulty) are required' });
+     return;
+    }
+  // Validate the difficulty
+  const validDifficulties = ['easy', 'medium', 'hard'];
+  if (!validDifficulties.includes(difficulty)) {
+       res.status(400).json({ error: 'Invalid difficulty. Valid values are "easy", "medium", "hard".' });
+       return;
+      }
+
   try {
     const set = await prisma.set.findUnique({ where: { id: Number(setId) } });
 
@@ -291,7 +303,7 @@ app.post('/set/:id/flashcard', async (req: Request, res: Response) => {
     res.status(201).json(newFlashcard);
     console.log('Received set ID:', setId);
   } catch (error) {
-    console.log(error)
+    console.error(error)
     res.status(500).json({ error: 'Error creating flashcard' });
   }
 });
@@ -479,7 +491,7 @@ app.post('/user',validateUserInput, async (req: Request, res: Response) => {
             },
         });
 
-        res.status(201).json(user);
+    res.status(201).json(user);
     } catch (error) {
         console.error('Error creating user:', error);
         res.status(400).json({ error: 'The user could not be created.' });
@@ -494,6 +506,12 @@ If the user is found, it returns the user data, otherwise, it sends a 404 error.
 //Get a user by ID
 app.get('/user/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
+  //Check if the id is a valid number 
+  if(isNaN(Number(id))){
+    res.status(400).json({error: 'Invalid user ID'})
+    return;
+  }
+
     try {
         const users = await prisma.user.findUnique({
          
@@ -502,10 +520,14 @@ app.get('/user/:id', async (req: Request, res: Response) => {
                 },
       
         });
+        if(!users){
+          res.status(404).json({ error: 'The user not found'})
+          return;
+        }
         res.status(200).json(users);
         console.log("User found.");
     } catch (error) {
-       res.status(404).json({ error: 'The user was not found' });
+       res.status(500).json({ error: 'An error occurred while fetching the user.' });
 
     }
 });
@@ -577,8 +599,22 @@ If the user is deleted successfully, it sends a 204 status code (no content). If
 */
 app.delete('/user/:id', async (req: Request, res: Response) => {
     const { userId } = req.params;
-  
+
+  // Validate the ID
+  const id = parseInt(userId, 10);
+  if (isNaN(id)) {
+       res.status(400).json({ error: 'Invalid user ID' });
+       return;
+  }
+
     try {
+      const user = await prisma.user.findUnique({ where: { id } });
+
+      if (!user) {
+         res.status(404).json({ error: 'User not found' });
+         return;
+      }
+
       await prisma.user.delete({
         where: {
           id: parseInt(userId),
@@ -586,7 +622,7 @@ app.delete('/user/:id', async (req: Request, res: Response) => {
       });
       res.status(204).json({ message: 'The user  was deleted' });
     } catch (error) {
-      res.status(404).json({ error: 'The user was not found' });
+      res.status(500).json({ error: 'Error deleting user' });
     }
   });
 /*
@@ -959,10 +995,12 @@ app.post('/telemetry', async (req: Request, res: Response) => {
 // ===========================
 // Start the Server
 // ===========================
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  
-});
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 
  export default app;

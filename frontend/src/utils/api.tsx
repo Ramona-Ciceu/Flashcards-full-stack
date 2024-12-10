@@ -1,7 +1,7 @@
 //frontend/src/utils/api.tsx
 import axios from 'axios';
 import { Flashcard, Sets} from "../Types/type";
-import { error } from 'console';
+
 
 //
 // SET CALLS
@@ -39,8 +39,8 @@ export const fetchSetById = async (id: number) => {
   const response = await fetch(`http://localhost:3000/set/${id}`, { method: "GET"});
   const json = await response.json();
   return json.data
-  } catch (errro){
-    console.error("fetchSetById error", error);
+  } catch (error){
+    console.error("fetchSetById error");
   }
 };
 
@@ -375,8 +375,8 @@ export const deleteFlashcardCollection = async (collectionId: number) => {
   try{
   const response = await fetch(`http://localhost:3000/collection/${collectionId}`, { method: "DELETE" });
   if (!response.ok) throw new Error("Failed to delete collection");
-  } catch(erro){
-    console.error("deleteFlashcardCollection error", error);
+  } catch(error){
+    console.error("deleteFlashcardCollection error");
   }
 };
 
@@ -422,7 +422,7 @@ export const createTelemetry = async (data:{
   return json.data;
 } catch(error){
   console.error("createTelemetry error", error)
-}
+}``
 };
 
 
