@@ -16,6 +16,8 @@ jest.mock('@prisma/client', () => {
     ...originalModule,
     PrismaClient: jest.fn(() => ({
       user: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
         delete: jest.fn().mockResolvedValue({
           id: 1,
           username: 'testuser',
@@ -26,6 +28,85 @@ jest.mock('@prisma/client', () => {
     })),
   };
 });
+
+
+describe("POST /login", () => {
+  const mockUser = {
+    id: 1,
+    username: "testuser",
+    password: "password123",
+    
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should return 200 and user data for valid credentials", async () => {
+    // Mock `findFirst` to return a user for valid credentials
+    (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+      id: mockUser.id,
+      username: mockUser.username,
+      password: mockUser.password,
+    });
+
+    const response = await request(app)
+      .post("/login")
+      .send({ username: mockUser.username, password: mockUser.password })
+      .set("Content-Type", "application/json");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: mockUser.id, username: mockUser.username });
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: { username: mockUser.username },
+    });
+  });
+
+  it("should return 401 for invalid credentials", async () => {
+    // Mock Prisma response for invalid user
+    (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+      id: mockUser.id,
+      username: mockUser.username,
+      password: "wrongpassword",
+    });
+
+    const response = await request(app)
+      .post("/login")
+      .send({ username: mockUser.username, password: "wrongpassword" })
+      .set("Content-Type", "application/json");
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: "Invalid credentials" });
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: { username: mockUser.username },
+    });
+  });
+
+  it("should return 401 if user is not found", async () => {
+    // Mock Prisma response for no user found
+    (prisma.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+    const response = await request(app)
+      .post("/login")
+      .send({ username: "nonexistentuser", password: "password" })
+      .set("Content-Type", "application/json");
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: "Invalid credentials" });
+    });
+  });
+
+  it("should return 500 for server errors", async () => {
+    // Mock Prisma response to throw an error
+    (prisma.user.findFirst as jest.Mock).mockRejectedValue(new Error("Database error"));
+
+    const response = await request(app)
+      .post("/login")
+      .send({ username: "testuser", password: "password123" });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: "Error logging in." });
+  });
 
 
 
