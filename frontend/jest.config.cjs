@@ -9,5 +9,6 @@ module.exports = {
   module: 'commonjs', // Treat TypeScript files as CommonJS
   moduleNameMapper: {
     '^@prisma/client$': '<rootDir>/__mocks__/@prisma/client.ts', // Mock path
-}
+    setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  }
 };
