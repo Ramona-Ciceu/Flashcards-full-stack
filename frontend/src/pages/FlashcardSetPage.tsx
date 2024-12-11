@@ -31,6 +31,7 @@ const FlashcardSetPage: React.FC = () => {
         const data = await fetchSets();
         setSets(data);
         setLoaded(true);
+        console.log(data)
       }
     }
 

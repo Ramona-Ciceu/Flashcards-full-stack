@@ -24,6 +24,8 @@ npm install axios
 npm install --save-dev @types/jest
 
 npm install --save-dev jest axios-mock-adapter
+npm install --save-dev jest-environment-jsdom
+
 
 
 

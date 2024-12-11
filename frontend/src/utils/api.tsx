@@ -11,10 +11,14 @@ export const fetchSets = async () => {
   try{
   const response = await fetch("http://localhost:3000/set", { method: "GET"});
   console.log(response)
-  if (!response.ok) throw new Error("Failed to fetch sets");
+  if (!response.ok) {
+    const errorData = await response.json();
+   throw new Error(errorData.error || "Failed to fetch set");
+  }
   return response.json();
   } catch (error){
     console.error("fetchSets Error:", error);
+    throw error;
   }
 };
 //Create a new flashcard set
@@ -25,18 +29,24 @@ export const createSet = async (set: { name: string; userId: string }) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(set),
   });
+  
   console.log(response)
-  if (!response.ok) throw new Error("Failed to create set");
+  if (!response.ok) {
+    const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to create set");
+  }
   return response.json();
 } catch(error) {
  console.error("createSet Error", error)
+ throw error;
 }
 };
 
 //Fetch a specific set by ID
 export const fetchSetById = async (id: number) => {
   try{
-  const response = await fetch(`http://localhost:3000/set/${id}`, { method: "GET"});
+  const response = await fetch(`http://localhost:3000/set/${id}`,
+     { method: "GET"});
   const json = await response.json();
   return json.data
   } catch (error){
@@ -52,10 +62,14 @@ export const updateSet = async (id: number, updates: { name: string;  }) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
   });
-  if (!response.ok) throw new Error("Failed to update set");
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to update set")
+  }
   return response.json();
 } catch (error){
   console.error("updateSet error", error)
+  throw error;
 }
 };
 
@@ -63,11 +77,14 @@ export const updateSet = async (id: number, updates: { name: string;  }) => {
 export const deleteSet = async (id: number) => {
   try{
   const response = await fetch(`http://localhost:3000/set/${id}`, { method: "DELETE" });
-  if (!response.ok) throw new Error("Failed to delete set");
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to delete set");}
   } catch(error){
     console.error("deleteSet error", error)
+    throw error;
   }
-};
+  };
 
 export const createCommentsBySetId = async (id: number, rating: number, comments: string, userId: number) => {
   try{
