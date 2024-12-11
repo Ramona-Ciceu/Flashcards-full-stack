@@ -254,11 +254,6 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
       flashcards = flashcards.sort(() => Math.random() - 0.5);
     }
 
-    // If its empty, just return a [] not a 404.
-    // if (flashcards.length === 0) {
-    //    res.status(404).json({ error: 'No flashcards found for the set' });
-    //    return;
-    //   }
 
     res.status(200).json(flashcards);
   } catch (error) {

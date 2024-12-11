@@ -26,11 +26,7 @@ export interface Sets {
     message: string;
   }
   
-  export interface User {
-    id: number;
-    username: string;
-    
-  }
+ 
   
   export interface Collection {
     id:number;
@@ -42,9 +38,10 @@ export interface Sets {
   }
 
 
-export interface UserType {
+export interface User {
   id: number;
   username: string;
+  password:string,
   role: string;
   limit: number;
 }

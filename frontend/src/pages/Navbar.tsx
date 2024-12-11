@@ -31,7 +31,8 @@ const Navbar: React.FC = () => {
           <Link to="/collections" className="hover:text-gray-200">
             Collections
           </Link>
-      
+      <Link to="/admin" className= "hover:text-gray-200">Admin</Link>
+    
         </div>
       </div>
     </nav>
