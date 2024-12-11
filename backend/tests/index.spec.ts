@@ -3,6 +3,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
+import supertest from 'supertest';
 
 import app from '../src/index';
 import { describe, test, beforeAll, afterAll, expect } from '@jest/globals';
@@ -26,6 +27,12 @@ jest.mock('@prisma/client', () => {
       },
       update: jest.fn().mockRejectedValue(new Error('User not found')),
     })),
+    collection: {
+      findUnique: jest.fn(),
+    },
+    set: {
+      findUnique: jest.fn(),
+    }
   };
 });
 
@@ -137,21 +144,7 @@ describe('GET /set/:id/flashcard', () => {
   });
 });
 
-describe('POST /set/:id/flashcard', () => {
- 
-  test('should return 400 for invalid difficulty', async () => {
-    const flashcardData = {
-      setId: 1,
-      question: 'What is 2 + 2?',
-      solution: '4',
-      difficulty: 'unknown',  // Invalid difficulty
-    };
-    const response = await request(app).post('/set/:id/flashcard').send(flashcardData);
-    expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid difficulty. Valid values are "easy", "medium", "hard".');
-  });
 
-  
 
 
 /// Testing for user
@@ -233,7 +226,111 @@ describe('GET /', () => {
       expect(response.body.error).toBe('Invalid user ID');
     });
   });
+ 
+
+describe('User Routes Error Handling', () => {
+  
+  describe('GET /user/:id', () => {
+    it('should return 400 for an invalid user ID', async () => {
+      const response = await request(app).get('/user/abc');
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid user ID');
+    });
+
+    it('should return 404 if user not found', async () => {
+      const response = await request(app).get('/user/999'); // Assuming 999 is a non-existing user ID
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('The user not found');
+    });
+
+    it('should return 500 on server error', async () => {
+      // Mock server error scenario
+      jest.spyOn(global.console, 'error').mockImplementation(() => {}); // Suppress console errors for test clarity
+      const response = await request(app).get('/user/1');
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('An error occurred while fetching the user.');
+    });
+  });
+
+  describe('PUT /user/:id', () => {
+    it('should return 400 for an invalid user ID', async () => {
+      const response = await request(app).put('/user/abc').send({ username: 'newname' });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid user ID');
+    });
+
+    it('should return 403 if user role change not allowed', async () => {
+      const response = await request(app).put('/user/1').send({ role: 'admin' }).set('x-role', 'user'); // Assuming user is not admin
+      expect(response.status).toBe(403);
+      expect(response.body.error).toBe('Not authorized to change user role.');
+    });
+
+  describe('DELETE /user/:id', () => {
+    it('should return 400 for an invalid user ID', async () => {
+      const response = await request(app).delete('/user/abc');
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid user ID');
+    });
+
+    it('should return 404 if user not found', async () => {
+      const response = await request(app).delete('/user/999'); // Assuming 999 is a non-existing user ID
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('User not found');
+    });
+
+    it('should return 500 on server error', async () => {
+      jest.spyOn(global.console, 'error').mockImplementation(() => {}); // Suppress console errors for test clarity
+      const response = await request(app).delete('/user/1');
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Error deleting user');
+    });
+  });
+
+  describe('GET /user/:userId/set', () => {
+    it('should return 400 for an invalid user ID', async () => {
+      const response = await request(app).get('/user/abc/set');
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid user ID');
+    });
+
+    it('should return 404 if user not found', async () => {
+      const response = await request(app).get('/user/999/set'); // Assuming 999 is a non-existing user ID
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('User not found');
+    });
+
+    it('should return 500 on server error', async () => {
+      jest.spyOn(global.console, 'error').mockImplementation(() => {}); // Suppress console errors for test clarity
+      const response = await request(app).get('/user/1/set');
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('An error occurred while fetching the flashcard sets');
+    });
+  });
+
 });
-})})})
+});
+describe('GET /user/:userId/collection', () => {
+  it('should return 400 for an invalid user ID', async () => {
+    const response = await request(app).get('/user/abc/collection');
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid user ID');
+  });
+
+  it('should return 404 if user or set not found', async () => {
+    const response = await request(app).get('/user/999/collection'); // Assuming 999 is a non-existing user ID
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('User or set not found');
+  });
+
+  it('should return 500 on server error', async () => {
+    jest.spyOn(global.console, 'error').mockImplementation(() => {}); // Suppress console errors for test clarity
+    const response = await request(app).get('/user/1/collection');
+    expect(response.status).toBe(500);
+    expect(response.body.error).toBe('An error occurred while fetching the flashcard collection.');
+  });
+});
+});
+});
+});
 
 

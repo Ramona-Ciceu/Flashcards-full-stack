@@ -285,8 +285,7 @@ const FlashcardSetPage: React.FC = () => {
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {flashcards
           .filter((card) => card.setId === selectedSetId)
-          .map((card) =>
-            
+          .map((card) => 
             (
             <div key={card.id} className="p-4 mb-4 bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
               {editingFlashcardId === card.id ? (

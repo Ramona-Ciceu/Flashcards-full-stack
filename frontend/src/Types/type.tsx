@@ -11,7 +11,7 @@ export interface Flashcard {
 export interface Sets {
   id: number;
   name: string;
-  collectionId: number;
+ 
 
 } 
 
@@ -40,4 +40,11 @@ export interface Sets {
     updatedAt:string
     set?:Sets[]
   }
-  
+
+
+export interface UserType {
+  id: number;
+  username: string;
+  role: string;
+  limit: number;
+}

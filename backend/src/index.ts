@@ -254,10 +254,11 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
       flashcards = flashcards.sort(() => Math.random() - 0.5);
     }
 
-    if (flashcards.length === 0) {
-       res.status(404).json({ error: 'No flashcards found for the set' });
-       return;
-      }
+    // If its empty, just return a [] not a 404.
+    // if (flashcards.length === 0) {
+    //    res.status(404).json({ error: 'No flashcards found for the set' });
+    //    return;
+    //   }
 
     res.status(200).json(flashcards);
   } catch (error) {
@@ -995,12 +996,10 @@ app.post('/telemetry', async (req: Request, res: Response) => {
 // ===========================
 // Start the Server
 // ===========================
-if (process.env.NODE_ENV !== 'test') {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+
+});
 
 
  export default app;

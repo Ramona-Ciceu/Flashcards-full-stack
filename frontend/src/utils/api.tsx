@@ -21,36 +21,44 @@ export const fetchSets = async () => {
     throw error;
   }
 };
-//Create a new flashcard set
+// Create a new flashcard set
 export const createSet = async (set: { name: string; userId: string }) => {
   try {
-  const response = await fetch("http://localhost:3000/set", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(set),
-  });
-  
-  console.log(response)
-  if (!response.ok) {
-    const errorData = await response.json();
+    const response = await fetch("http://localhost:3000/set", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(set), // Include the set data in the request body
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
       throw new Error(errorData.error || "Failed to create set");
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("createSet Error", error);
+    throw error;
   }
-  return response.json();
-} catch(error) {
- console.error("createSet Error", error)
- throw error;
-}
 };
+
 
 //Fetch a specific set by ID
 export const fetchSetById = async (id: number) => {
   try{
   const response = await fetch(`http://localhost:3000/set/${id}`,
      { method: "GET"});
+     if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || `Failed to fetch set with ID ${id}`);
+    }
   const json = await response.json();
   return json.data
   } catch (error){
-    console.error("fetchSetById error");
+    console.error("fetchSetById error", error);
+    throw error;
   }
 };
 
@@ -59,9 +67,7 @@ export const updateSet = async (id: number, updates: { name: string;  }) => {
   try{
   const response = await fetch(`http://localhost:3000/set/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updates),
-  });
+    body: JSON.stringify(updates),});
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.error || "Failed to update set")
@@ -119,12 +125,20 @@ export const createCommentsBySetId = async (id: number, rating: number, comments
 //
 //Get flashcards by set ID
 export const fetchFlashcardSet = async (id: number) => {
-  try{
-  const response = await fetch(`http://localhost:3000/set/${id}/flashcard`, { method: "GET"});
-  if (!response.ok) throw new Error("Failed to fetch flashcards");
-  return response.json();
-  } catch(error){
-    console.error("fetchFlashcardSet error", error)
+  try {
+    const response = await fetch(`http://localhost:3000/set/${id}/flashcard`, {
+      method: "GET"
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch flashcards");
+    }
+
+    const data = await response.json();
+    console.log(data)
+    return data; 
+  } catch (error) {
+    console.error("fetchFlashcardSet error", error);
   }
 };
 
@@ -205,6 +219,7 @@ export const loginUser = async (username: string, password: string) => {
   return await response.json();
 } catch (error){
   console.error("loginUser error", error)
+  throw error;
 }
 };
 

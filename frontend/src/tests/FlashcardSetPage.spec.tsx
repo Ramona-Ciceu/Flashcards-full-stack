@@ -1,85 +1,88 @@
-// import React from "react";
-// import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-// import FlashcardSetPage from "../pages/FlashcardSetPage";
-// import {
-//   fetchSets,
-//   createSet,
-//   fetchFlashcardSet,
-//   createFlashcard,
-//   deleteSet,
-// } from "../utils/api";
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import FlashcardSetPage from "../pages/FlashcardSetPage";
+import {
+  fetchSets,
+  createSet,
+  fetchFlashcardSet,
+  createFlashcard,
+  deleteSet,
+} from "../utils/api";
 
-// jest.mock("../utils/api", () => ({
-//   fetchSets: jest.fn(),
-//   createSet: jest.fn(),
-//   fetchFlashcardSet: jest.fn(),
-//   createFlashcard: jest.fn(),
-//   deleteSet: jest.fn(),
-// }));
+jest.mock("../utils/api", () => ({
+  fetchSets: jest.fn(),
+  createSet: jest.fn(),
+  fetchFlashcardSet: jest.fn(),
+  createFlashcard: jest.fn(),
+  deleteSet: jest.fn(),
+}));
 
-// describe("FlashcardSetPage", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
+describe("FlashcardSetPage", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-//   test("renders the component with initial state", async () => {
-//     (fetchSets as jest.Mock).mockResolvedValue([]);
+  test("renders the component with initial state", async () => {
+    (fetchSets as jest.Mock).mockResolvedValue([]);
 
-//     render(<FlashcardSetPage />);
+    render(<FlashcardSetPage />);
 
-//     expect(screen.getByPlaceholderText(/Enter set name/i)).toBeInTheDocument();
-//     expect(screen.getByText(/Create Set/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Enter set name/i)).toBeInTheDocument();
+    expect(screen.getByText(/Create Set/i)).toBeInTheDocument();
 
-//     await waitFor(() => expect(fetchSets).toHaveBeenCalledTimes(1));
-//   });
+    await waitFor(() => expect(fetchSets).toHaveBeenCalledTimes(1));
+  });
 
-//   test("adds a new set", async () => {
-//     (createSet as jest.Mock).mockResolvedValue({
-//       id: 1,
-//       name: "Test Set",
-//     });
+  test("adds a new set", async () => {
+    (createSet as jest.Mock).mockResolvedValue({
+      id: 1,
+      name: "Test Set",
+    });
 
-//     render(<FlashcardSetPage />);
+    render(<FlashcardSetPage />);
 
-//     fireEvent.change(screen.getByPlaceholderText(/Enter set name/i), {
-//       target: { value: "Test Set" },
-//     });
-//     fireEvent.click(screen.getByText(/Create Set/i));
+    fireEvent.change(screen.getByPlaceholderText(/Enter set name/i), {
+      target: { value: "Test Set" },
+    });
+    fireEvent.click(screen.getByText(/Create Set/i));
 
-//     await waitFor(() => expect(createSet).toHaveBeenCalledWith({ name: "Test Set", userId: "" }));
-//     await waitFor(() => expect(screen.getByText(/Test Set/i)).toBeInTheDocument());
-//   });
+    await waitFor(() => expect(createSet).toHaveBeenCalledWith({
+      name: "Test Set",
+      userId: "", // Replace with actual user ID if needed
+    }));
+    await waitFor(() => expect(screen.getByText(/Test Set/i)).toBeVisible());
+  });
 
-//   test("fetches flashcards when a set is selected", async () => {
-//     (fetchFlashcardSet as jest.Mock).mockResolvedValue([
-//       { id: 1, question: "Q1", solution: "A1", difficulty: "easy", setId: 1 },
-//     ]);
+  test("fetches flashcards when a set is selected", async () => {
+    (fetchFlashcardSet as jest.Mock).mockResolvedValue([
+      { id: 1, question: "Q1", solution: "A1", difficulty: "easy", setId: 1 },
+    ]);
 
-//     (fetchSets as jest.Mock).mockResolvedValue([
-//       { id: 1, name: "Test Set" },
-//     ]);
+    (fetchSets as jest.Mock).mockResolvedValue([
+      { id: 1, name: "Test Set" },
+    ]);
 
-//     render(<FlashcardSetPage />);
+    render(<FlashcardSetPage />);
 
-//     await waitFor(() => expect(fetchSets).toHaveBeenCalled());
+    await waitFor(() => expect(fetchSets).toHaveBeenCalled());
 
-//     fireEvent.change(screen.getByRole("combobox"), { target: { value: "1" } });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "1" } });
 
-//     await waitFor(() => expect(fetchFlashcardSet).toHaveBeenCalledWith(1));
-//     expect(screen.getByText(/Q1/i)).toBeInTheDocument();
-//   });
+    await waitFor(() => expect(fetchFlashcardSet).toHaveBeenCalledWith(1));
+    expect(screen.getByText(/Q1/i)).toBeDefined(); // Use toBeDefined or toBeTruthy to check for presence
+  });
 
-//   test("deletes a set", async () => {
-//     (fetchSets as jest.Mock).mockResolvedValue([{ id: 1, name: "Test Set" }]);
-//     (deleteSet as jest.Mock).mockResolvedValue([{setId:1}]);
+  test("deletes a set", async () => {
+    (fetchSets as jest.Mock).mockResolvedValue([{ id: 1, name: "Test Set" }]);
+    (deleteSet as jest.Mock).mockResolvedValue({ setId: 1 });
 
-//     render(<FlashcardSetPage />);
+    render(<FlashcardSetPage />);
 
-//     await waitFor(() => expect(fetchSets).toHaveBeenCalled());
+    await waitFor(() => expect(fetchSets).toHaveBeenCalled());
 
-//     fireEvent.click(screen.getByText(/Delete/i));
+    fireEvent.click(screen.getByText(/Delete/i));
 
-//     await waitFor(() => expect(deleteSet).toHaveBeenCalledWith(1));
-//     expect(screen.queryByText(/Test Set/i)).toBeNull();
-//   });
-// });
+    await waitFor(() => expect(deleteSet).toHaveBeenCalledWith(1));
+    expect(screen.queryByText(/Test Set/i)).toBeNull();
+  });
+});
