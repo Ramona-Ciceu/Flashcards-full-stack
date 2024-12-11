@@ -254,6 +254,10 @@ app.get('/set/:id/flashcard', async (req: Request, res: Response) => {
       flashcards = flashcards.sort(() => Math.random() - 0.5);
     }
 
+    if (flashcards.length === 0) {
+       res.status(404).json({ error: 'No flashcards found for the set' });
+       return;
+      }
 
     res.status(200).json(flashcards);
   } catch (error) {
@@ -312,10 +316,6 @@ app.put('/set/:setId/flashcard/:flashcardId', async (req: Request, res: Response
   try {
     const flashcard = await prisma.flashcard.findUnique({ where: { id: Number(flashcardId) } });
 
-    if (!flashcard) {
-       res.status(404).json({ error: 'Flashcard not found' });
-       return;
-    }
 
     const updatedFlashcard = await prisma.flashcard.update({
       where: { id: Number(flashcardId) },
@@ -594,33 +594,19 @@ prisma.user.delete() is used to remove the user from the database.
 If the user is deleted successfully, it sends a 204 status code (no content). If the user doesn't exist, it sends a 404 error.
 */
 app.delete('/user/:id', async (req: Request, res: Response) => {
-    const { userId } = req.params;
+  const { userId } = req.params;
 
-  // Validate the ID
-  const id = parseInt(userId, 10);
-  if (isNaN(id)) {
-       res.status(400).json({ error: 'Invalid user ID' });
-       return;
+  try {
+    await prisma.user.delete({
+      where: {
+        id: parseInt(userId),
+      },
+    });
+    res.status(204).json({ message: 'The user  was deleted' });
+  } catch (error) {
+    res.status(404).json({ error: 'The user was not found' });
   }
-
-    try {
-      const user = await prisma.user.findUnique({ where: { id } });
-
-      if (!user) {
-         res.status(404).json({ error: 'User not found' });
-         return;
-      }
-
-      await prisma.user.delete({
-        where: {
-          id: parseInt(userId),
-        },
-      });
-      res.status(204).json({ message: 'The user  was deleted' });
-    } catch (error) {
-      res.status(500).json({ error: 'Error deleting user' });
-    }
-  });
+});
 /*
 GET /user/:userID/set fetches all flashcard sets associated with a user.
 It first checks if the user exists and then retrieves 
@@ -991,11 +977,12 @@ app.post('/telemetry', async (req: Request, res: Response) => {
 // ===========================
 // Start the Server
 // ===========================
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-
-});
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 
  export default app;
-

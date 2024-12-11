@@ -16,6 +16,7 @@ const AdminPage: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     async function loadUsers() {
@@ -28,8 +29,20 @@ const AdminPage: React.FC = () => {
         setError("Failed to load users.");
       }
     }
+
+    // Fetch current logged-in user by ID
+    async function loadCurrentUser() {
+      try {
+        const user = await fetchUserById(currentUser?.id!); // Pass the current user's ID
+        setCurrentUser(user);
+      } catch (error) {
+        setError("Failed to load current user.");
+      }
+    }
+
     loadUsers();
-  }, []);
+    loadCurrentUser();
+  }, [currentUser?.id]);
 
   const handleCreateUser = async () => {
     try {
@@ -38,7 +51,7 @@ const AdminPage: React.FC = () => {
       setUsername("");
       setPassword("");
       setRole("user");
-      setShowCreateForm(false); // Hide the form after creating a user
+      setShowCreateForm(false);
     } catch (error) {
       setError("Failed to create user.");
     }
@@ -62,7 +75,7 @@ const AdminPage: React.FC = () => {
       setUsername("");
       setPassword("");
       setRole("user");
-      setShowCreateForm(false); // Hide the form after updating a user
+      setShowCreateForm(false);
     } catch (error) {
       setError("Failed to update user.");
     }
@@ -76,6 +89,10 @@ const AdminPage: React.FC = () => {
       setError("Failed to delete user.");
     }
   };
+
+  if (!currentUser || currentUser.role !== "admin") {
+    return <div>Access Denied</div>;
+  }
 
   if (error) return <div>{error}</div>;
 
