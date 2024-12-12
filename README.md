@@ -13,7 +13,7 @@ npm i --save-dev @types/cors
 
 npm i --save-dev @types/mocha
 
-Frontnend packages installed :
+Frontend packages installed :
 For vite, to set it up first time i ran 
 npm create vite@latest frontend -- --template react-ts
 but after that i've only ran "npm install vite"
