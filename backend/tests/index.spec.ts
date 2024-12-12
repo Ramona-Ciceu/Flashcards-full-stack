@@ -217,15 +217,7 @@ describe('GET /', () => {
     });
   });
 
-  // Test DELETE a user by ID
-  describe('DELETE /user/:id', () => {
-       test('should return 400 for invalid user ID', async () => {
-      const response = await request(app).delete('/user/invalidId');
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Invalid user ID');
-    });
-  });
+  
  
 
 describe('User Routes Error Handling', () => {

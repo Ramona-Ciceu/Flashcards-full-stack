@@ -7,7 +7,7 @@ import SignUpPage from "./pages/SignUpPage";
 import FlashcardSetPage from "./pages/FlashcardSetPage";
 import CollectionPage from "./pages/collectionPage";
 import Navbar from "./pages/Navbar";
-
+import AdminPage from "./pages/AdminPage";
 
 
 
@@ -25,6 +25,7 @@ const App: React.FC = () => {
           <Route path="/HomePage" element={<HomePage />} />
           <Route path="/flashcard-sets" element={<FlashcardSetPage />} />
           <Route path="/collections" element={<CollectionPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </div>
     </Router>

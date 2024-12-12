@@ -405,6 +405,7 @@ app.get('/user', async (req: Request, res: Response) => {
         const users = await prisma.user.findMany({
          
             select: {
+              id:true,
                 username: true,
                 role: true,
 
